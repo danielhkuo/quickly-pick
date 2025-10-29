@@ -11,10 +11,13 @@ import (
 
 	"github.com/danielhkuo/quickly-pick/cliparse"
 	"github.com/danielhkuo/quickly-pick/router"
+	"github.com/joho/godotenv"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
-	var err error
+
+	_ = godotenv.Load(".env")
 
 	// Parse flags
 	cfg, err := cliparse.ParseFlags(os.Args[1:])
