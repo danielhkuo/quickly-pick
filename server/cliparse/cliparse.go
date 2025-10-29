@@ -10,25 +10,23 @@ import (
 type Config struct {
 	Port         int
 	DatabaseURL  string
-	DatabaseType string
 	AdminKeySalt string
 	PollSlugSalt string
 }
 
-// ParseFlags validates flags and sets port number
+// ParseFlags validates flags and sets configuration
 func ParseFlags(args []string) (Config, error) {
 	var cfg Config
 
 	fs := flag.NewFlagSet("quickly-pick", flag.ContinueOnError)
 
-	// Network config (can be CLI args or env)
+	// Network config
 	fs.IntVar(&cfg.Port, "p", 0, "Server port")
 	fs.StringVar(&cfg.DatabaseURL, "d", "", "Database URL")
-	fs.StringVar(&cfg.DatabaseType, "t", "", "Database type (sqlite or postgres)")
 
-	// Secrets (prefer env variables, but allow CLI for dev)
-	fs.StringVar(&cfg.AdminKeySalt, "admin-salt", "", "Admin key salt (prefer env)")
-	fs.StringVar(&cfg.PollSlugSalt, "slug-salt", "", "Poll slug salt (prefer env)")
+	// Secrets (prefer env variables)
+	fs.StringVar(&cfg.AdminKeySalt, "admin-salt", "", "Admin key salt")
+	fs.StringVar(&cfg.PollSlugSalt, "slug-salt", "", "Poll slug salt")
 
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
@@ -46,18 +44,12 @@ func ParseFlags(args []string) (Config, error) {
 			cfg.Port = 3318 // default
 		}
 	}
+
 	if cfg.DatabaseURL == "" {
 		cfg.DatabaseURL = os.Getenv("DATABASE_URL")
 	}
 	if cfg.DatabaseURL == "" {
-		return Config{}, errors.New("database URL required (use -d or DATABASE_URL env)")
-	}
-
-	if cfg.DatabaseType == "" {
-		cfg.DatabaseType = os.Getenv("DATABASE_TYPE")
-		if cfg.DatabaseType == "" {
-			cfg.DatabaseType = "sqlite"
-		}
+		return Config{}, errors.New("DATABASE_URL required")
 	}
 
 	// Secrets - MUST be provided
