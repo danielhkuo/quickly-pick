@@ -1,4 +1,36 @@
+# Environment
 .env
+.env.local
+.env.production
+
+# Go
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Binary
+quickly-pick
+server/quickly-pick
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Development notes
 MVP.md
-dev.db
-package-lock.json
+notes/
