@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
 	"github.com/danielhkuo/quickly-pick/cliparse"
@@ -18,6 +19,11 @@ import (
 
 func main() {
 	var err error
+
+	// Load .env file from server directory
+	if err := godotenv.Load(".env"); err != nil {
+		slog.Warn("No .env file found, using environment variables")
+	}
 
 	// Parse configuration
 	cfg, err := cliparse.ParseFlags(os.Args[1:])
