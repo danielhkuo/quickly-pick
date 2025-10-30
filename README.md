@@ -27,7 +27,6 @@ Create a poll, share a link, everyone votes with a slider per option. Results ar
 
 ## Documentation
 
-- [MVP Specification](MVP.md) - Complete product requirements and design
 - [API Documentation](docs/api.md) - REST API endpoints and examples
 - [Database Schema](docs/database.md) - Data model and relationships
 - [Algorithm Guide](docs/algorithm.md) - How Balanced Majority Judgment works
