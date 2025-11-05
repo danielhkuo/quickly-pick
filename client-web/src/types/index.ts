@@ -106,6 +106,8 @@ export interface InputProps {
   type?: 'text' | 'email'
   error?: string
   placeholder?: string
+  required?: boolean
+  disabled?: boolean
 }
 
 // API Error Type

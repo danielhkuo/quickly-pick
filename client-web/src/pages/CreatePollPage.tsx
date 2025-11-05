@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Container } from '../components/common/Container'
-import { Card } from '../components/common/Card'
-import { Button } from '../components/common/Button'
-import { Input } from '../components/common/Input'
+import { Container, Card, Button, Input, ErrorMessage } from '../components/common'
+import { useAsyncOperation } from '../hooks/useAsyncOperation'
+import { useFormValidation, validationRules } from '../hooks/useFormValidation'
 import { apiClient } from '../api/client'
 import type { CreatePollRequest, AddOptionRequest } from '../types'
 import './CreatePollPage.css'
@@ -25,8 +24,9 @@ type WizardStep = 1 | 2 | 3
 export const CreatePollPage = () => {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  
+  // Async operation management
+  const publishOperation = useAsyncOperation<{ poll_id: string; admin_key: string }>()
 
   // Step 1: Poll Details
   const [pollData, setPollData] = useState<PollData>({
@@ -34,7 +34,13 @@ export const CreatePollPage = () => {
     description: '',
     creator_name: ''
   })
-  const [pollErrors, setPollErrors] = useState<Partial<PollData>>({})
+
+  // Form validation for poll details
+  const pollValidation = useFormValidation<PollData>({
+    title: [validationRules.required('Poll title is required')],
+    creator_name: [validationRules.required('Creator name is required')],
+    description: [] // Optional field
+  })
 
   // Step 2: Options Management
   const [options, setOptions] = useState<PollOption[]>([
@@ -46,18 +52,7 @@ export const CreatePollPage = () => {
   // Step 3: Review and Publish
 
   const validateStep1 = (): boolean => {
-    const errors: Partial<PollData> = {}
-    
-    if (!pollData.title.trim()) {
-      errors.title = 'Poll title is required'
-    }
-    
-    if (!pollData.creator_name.trim()) {
-      errors.creator_name = 'Creator name is required'
-    }
-
-    setPollErrors(errors)
-    return Object.keys(errors).length === 0
+    return pollValidation.validate(pollData)
   }
 
   const validateStep2 = (): boolean => {
@@ -120,10 +115,7 @@ export const CreatePollPage = () => {
   }
 
   const handlePublish = async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
+    const result = await publishOperation.execute(async () => {
       // Step 1: Create the poll
       const createRequest: CreatePollRequest = {
         title: pollData.title.trim(),
@@ -149,16 +141,14 @@ export const CreatePollPage = () => {
         admin_key: createResponse.admin_key
       })
 
+      return createResponse
+    })
+
+    if (result) {
       // Store admin key in localStorage
-      localStorage.setItem(`admin_key_${createResponse.poll_id}`, createResponse.admin_key)
-
+      localStorage.setItem(`admin_key_${result.poll_id}`, result.admin_key)
       // Navigate to admin interface
-      navigate(`/admin/${createResponse.poll_id}`)
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create poll')
-    } finally {
-      setLoading(false)
+      navigate(`/admin/${result.poll_id}`)
     }
   }
 
@@ -187,25 +177,32 @@ export const CreatePollPage = () => {
       <Input
         label="Poll Title"
         value={pollData.title}
-        onChange={(value) => setPollData({ ...pollData, title: value })}
-        error={pollErrors.title}
+        onChange={(value) => {
+          setPollData({ ...pollData, title: value })
+          pollValidation.clearFieldError('title')
+        }}
+        error={pollValidation.errors.title}
         placeholder="What would you like to ask?"
+        required
       />
 
       <Input
         label="Description (Optional)"
         value={pollData.description}
         onChange={(value) => setPollData({ ...pollData, description: value })}
-        error={pollErrors.description}
         placeholder="Provide additional context or instructions"
       />
 
       <Input
         label="Your Name"
         value={pollData.creator_name}
-        onChange={(value) => setPollData({ ...pollData, creator_name: value })}
-        error={pollErrors.creator_name}
+        onChange={(value) => {
+          setPollData({ ...pollData, creator_name: value })
+          pollValidation.clearFieldError('creator_name')
+        }}
+        error={pollValidation.errors.creator_name}
         placeholder="How should voters know who created this poll?"
+        required
       />
 
       <div className="step-actions">
@@ -293,22 +290,24 @@ export const CreatePollPage = () => {
         </ol>
       </div>
 
-      {error && (
-        <div className="error-message" role="alert">
-          {error}
-        </div>
+      {publishOperation.state.error && (
+        <ErrorMessage 
+          message={publishOperation.state.error}
+          onRetry={handlePublish}
+          retryLabel="Try Publishing Again"
+        />
       )}
 
       <div className="step-actions">
-        <Button onClick={handleStep3Back} disabled={loading}>
+        <Button onClick={handleStep3Back} disabled={publishOperation.state.loading}>
           Back: Edit Options
         </Button>
         <Button 
           onClick={handlePublish} 
-          disabled={loading}
+          disabled={publishOperation.state.loading}
           type="submit"
         >
-          {loading ? 'Publishing...' : 'Publish Poll'}
+          {publishOperation.state.loading ? 'Publishing...' : 'Publish Poll'}
         </Button>
       </div>
     </Card>

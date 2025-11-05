@@ -1,47 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Container } from '../components/common/Container'
-import { Card } from '../components/common/Card'
-import { Button } from '../components/common/Button'
+import { Container, Card, Button, LoadingSpinner, ErrorMessage, NetworkError } from '../components/common'
+import { useAsyncOperation } from '../hooks/useAsyncOperation'
 import { apiClient } from '../api'
-import type { Poll, OptionRanking, ComponentState } from '../types'
-
-type ResultsPageState = ComponentState<{
-  poll: Poll
-  rankings: OptionRanking[]
-  ballot_count: number
-}>
+import type { Poll, OptionRanking } from '../types'
 
 export const ResultsPage = () => {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   
-  const [resultsState, setResultsState] = useState<ResultsPageState>({
-    loading: true,
-    error: null,
-    data: null
-  })
+  const resultsOperation = useAsyncOperation<{
+    poll: Poll
+    rankings: OptionRanking[]
+    ballot_count: number
+  }>()
 
   // Load results data
   useEffect(() => {
     if (!slug) return
 
     const loadResults = async () => {
-      try {
-        setResultsState({ loading: true, error: null, data: null })
-        const response = await apiClient.getResults(slug)
-        setResultsState({ loading: false, error: null, data: response })
-      } catch (error) {
-        setResultsState({
-          loading: false,
-          error: error instanceof Error ? error.message : 'Failed to load results',
-          data: null
-        })
-      }
+      await resultsOperation.execute(async () => {
+        return await apiClient.getResults(slug)
+      })
     }
 
     loadResults()
-  }, [slug])
+  }, [slug, resultsOperation])
 
   // Navigation handlers
   const handleBackToPoll = () => {
@@ -75,24 +60,33 @@ export const ResultsPage = () => {
   }
 
   // Loading state
-  if (resultsState.loading) {
-    return (
-      <Container>
-        <Card>
-          <p>Loading results...</p>
-        </Card>
-      </Container>
-    )
+  if (resultsOperation.state.loading) {
+    return <LoadingSpinner message="Loading results..." />
   }
 
   // Error state
-  if (resultsState.error || !resultsState.data) {
+  if (resultsOperation.state.error || !resultsOperation.state.data) {
+    // Check if it's a network error
+    if (resultsOperation.state.error?.includes('connect') || resultsOperation.state.error?.includes('network')) {
+      return (
+        <NetworkError 
+          message={resultsOperation.state.error}
+          onRetry={() => window.location.reload()}
+          onGoHome={() => navigate('/')}
+        />
+      )
+    }
+
     return (
       <Container>
         <Card>
-          <h1>Error</h1>
-          <p>{resultsState.error || 'Results not found'}</p>
-          <Button onClick={() => navigate('/')}>
+          <ErrorMessage
+            title="Results Not Available"
+            message={resultsOperation.state.error || 'The poll results could not be loaded.'}
+            onRetry={() => window.location.reload()}
+            retryLabel="Reload Page"
+          />
+          <Button onClick={() => navigate('/')} fullWidth>
             Return to Home
           </Button>
         </Card>
@@ -100,7 +94,7 @@ export const ResultsPage = () => {
     )
   }
 
-  const { poll, rankings, ballot_count } = resultsState.data
+  const { poll, rankings, ballot_count } = resultsOperation.state.data
 
   // Sealed results view for open polls
   if (poll.status === 'open') {

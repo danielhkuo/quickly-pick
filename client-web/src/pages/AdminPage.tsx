@@ -1,101 +1,71 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Container } from '../components/common/Container'
-import { Card } from '../components/common/Card'
-import { Button } from '../components/common/Button'
+import { Container, Card, Button, LoadingSpinner, ErrorMessage, NetworkError } from '../components/common'
+import { useAsyncOperation } from '../hooks/useAsyncOperation'
 import { apiClient } from '../api/client'
-import type { ComponentState, GetPollResponse } from '../types'
+import type { GetPollResponse } from '../types'
 import './AdminPage.css'
 
 export const AdminPage = () => {
   const { pollId } = useParams<{ pollId: string }>()
   const navigate = useNavigate()
   
-  const [pollState, setPollState] = useState<ComponentState<GetPollResponse>>({
-    loading: true,
-    error: null,
-    data: null
-  })
+  // Async operations
+  const pollOperation = useAsyncOperation<GetPollResponse & { ballot_count: number }>()
+  const closeOperation = useAsyncOperation<void>()
   
-  const [ballotCount, setBallotCount] = useState<number>(0)
   const [adminKey, setAdminKey] = useState<string | null>(null)
-  const [closingPoll, setClosingPoll] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
 
   useEffect(() => {
     if (!pollId) {
-      setPollState({
-        loading: false,
-        error: 'Poll ID is required',
-        data: null
-      })
+      pollOperation.setError('Poll ID is required')
       return
     }
 
     // Get admin key from localStorage
     const storedAdminKey = localStorage.getItem(`admin_key_${pollId}`)
     if (!storedAdminKey) {
-      setPollState({
-        loading: false,
-        error: 'Admin access denied. Admin key not found.',
-        data: null
-      })
+      pollOperation.setError('Admin access denied. Admin key not found.')
       return
     }
 
     setAdminKey(storedAdminKey)
     loadPollData(pollId, storedAdminKey)
-  }, [pollId])
+  }, [pollId, pollOperation])
 
   const loadPollData = async (pollId: string, adminKey: string) => {
-    try {
-      setPollState({ loading: true, error: null, data: null })
-      
+    await pollOperation.execute(async () => {
       // First load poll data
       const pollResponse = await apiClient.getPollAdmin(pollId, adminKey)
       
       // Then load ballot count using the poll slug
       const ballotResponse = await apiClient.getBallotCount(pollResponse.poll.slug)
 
-      setPollState({
-        loading: false,
-        error: null,
-        data: pollResponse
-      })
-      
-      setBallotCount(ballotResponse.ballot_count)
-    } catch (error) {
-      setPollState({
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to load poll data',
-        data: null
-      })
-    }
+      return {
+        ...pollResponse,
+        ballot_count: ballotResponse.ballot_count
+      }
+    })
   }
 
   const handleClosePoll = async () => {
-    if (!pollId || !adminKey || !pollState.data) return
+    if (!pollId || !adminKey || !pollOperation.state.data) return
 
-    setClosingPoll(true)
-    try {
+    const result = await closeOperation.execute(async () => {
       await apiClient.closePoll(pollId, { admin_key: adminKey })
-      
+    })
+
+    if (result !== null) {
       // Reload poll data to reflect the closed status
       await loadPollData(pollId, adminKey)
-    } catch (error) {
-      setPollState({
-        ...pollState,
-        error: error instanceof Error ? error.message : 'Failed to close poll'
-      })
-    } finally {
-      setClosingPoll(false)
     }
   }
 
   const handleCopyLink = async () => {
-    if (!pollState.data?.poll.slug) return
+    if (!pollOperation.state.data?.poll.slug) return
 
-    const pollUrl = `${window.location.origin}/poll/${pollState.data.poll.slug}`
+    const pollUrl = `${window.location.origin}/poll/${pollOperation.state.data.poll.slug}`
     
     try {
       await navigator.clipboard.writeText(pollUrl)
@@ -115,8 +85,8 @@ export const AdminPage = () => {
   }
 
   const handleViewResults = () => {
-    if (pollState.data?.poll.slug) {
-      navigate(`/poll/${pollState.data.poll.slug}/results`)
+    if (pollOperation.state.data?.poll.slug) {
+      navigate(`/poll/${pollOperation.state.data.poll.slug}/results`)
     }
   }
 
@@ -137,27 +107,34 @@ export const AdminPage = () => {
     }
   }
 
-  if (pollState.loading) {
-    return (
-      <Container>
-        <div className="admin-page">
-          <div className="loading-message">Loading poll data...</div>
-        </div>
-      </Container>
-    )
+  if (pollOperation.state.loading) {
+    return <LoadingSpinner message="Loading poll data..." />
   }
 
-  if (pollState.error) {
+  if (pollOperation.state.error || !pollOperation.state.data) {
+    // Check if it's a network error
+    if (pollOperation.state.error?.includes('connect') || pollOperation.state.error?.includes('network')) {
+      return (
+        <NetworkError 
+          message={pollOperation.state.error}
+          onRetry={() => window.location.reload()}
+          onGoHome={() => navigate('/')}
+        />
+      )
+    }
+
     return (
       <Container>
         <div className="admin-page">
           <Card>
-            <h1>Admin Access Error</h1>
-            <div className="error-message" role="alert">
-              {pollState.error}
-            </div>
+            <ErrorMessage
+              title="Admin Access Error"
+              message={pollOperation.state.error || 'Unable to access poll administration.'}
+              onRetry={() => window.location.reload()}
+              retryLabel="Reload Page"
+            />
             <div className="admin-actions">
-              <Button onClick={() => navigate('/create')}>
+              <Button onClick={() => navigate('/create')} fullWidth>
                 Create New Poll
               </Button>
             </div>
@@ -167,8 +144,9 @@ export const AdminPage = () => {
     )
   }
 
-  const poll = pollState.data!.poll
-  const options = pollState.data!.options
+  const poll = pollOperation.state.data.poll
+  const options = pollOperation.state.data.options
+  const ballotCount = pollOperation.state.data.ballot_count
 
   return (
     <Container>
@@ -234,13 +212,22 @@ export const AdminPage = () => {
 
         <Card>
           <h3>Poll Management</h3>
+          
+          {closeOperation.state.error && (
+            <ErrorMessage 
+              message={closeOperation.state.error}
+              onRetry={handleClosePoll}
+              retryLabel="Try Closing Again"
+            />
+          )}
+          
           <div className="admin-actions">
             {poll.status === 'open' && (
               <Button 
                 onClick={handleClosePoll}
-                disabled={closingPoll}
+                disabled={closeOperation.state.loading}
               >
-                {closingPoll ? 'Closing Poll...' : 'Close Poll'}
+                {closeOperation.state.loading ? 'Closing Poll...' : 'Close Poll'}
               </Button>
             )}
             

@@ -1,14 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Container } from '../components/common/Container'
-import { Card } from '../components/common/Card'
-import { Input } from '../components/common/Input'
-import { Button } from '../components/common/Button'
-import { Slider } from '../components/common/Slider'
+import { Container, Card, Input, Button, Slider, LoadingSpinner, ErrorMessage, NetworkError } from '../components/common'
+import { useAsyncOperation } from '../hooks/useAsyncOperation'
 import { apiClient } from '../api'
-import type { Poll, Option, ComponentState } from '../types'
-
-type VotePageState = ComponentState<{ poll: Poll; options: Option[] }>
+import type { Poll, Option } from '../types'
 
 interface VotingState {
   username: string
@@ -21,12 +16,10 @@ export const VotePage = () => {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   
-  // Poll data state
-  const [pollState, setPollState] = useState<VotePageState>({
-    loading: true,
-    error: null,
-    data: null
-  })
+  // Async operations
+  const pollOperation = useAsyncOperation<{ poll: Poll; options: Option[] }>()
+  const usernameOperation = useAsyncOperation<{ voter_token: string }>()
+  const ballotOperation = useAsyncOperation<void>()
   
   // Voting state
   const [votingState, setVotingState] = useState<VotingState>({
@@ -35,28 +28,23 @@ export const VotePage = () => {
     ratings: {},
     hasVoted: false
   })
-  
-  // Form states
-  const [usernameError, setUsernameError] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
 
   // Load poll data and check for existing voter session
   useEffect(() => {
     if (!slug) return
 
     const loadPollData = async () => {
-      try {
-        setPollState({ loading: true, error: null, data: null })
-        const response = await apiClient.getPoll(slug)
-        
+      const result = await pollOperation.execute(async () => {
+        return await apiClient.getPoll(slug)
+      })
+
+      if (result) {
         // Initialize ratings with neutral values (0.5)
         const initialRatings: Record<string, number> = {}
-        response.options.forEach(option => {
+        result.options.forEach(option => {
           initialRatings[option.id] = 0.5
         })
         
-        setPollState({ loading: false, error: null, data: response })
         setVotingState(prev => ({ ...prev, ratings: initialRatings }))
         
         // Check for existing voter session
@@ -71,48 +59,33 @@ export const VotePage = () => {
             hasVoted: true
           }))
         }
-      } catch (error) {
-        setPollState({
-          loading: false,
-          error: error instanceof Error ? error.message : 'Failed to load poll',
-          data: null
-        })
       }
     }
 
     loadPollData()
-  }, [slug])
+  }, [slug, pollOperation])
 
   // Handle username claim
   const handleClaimUsername = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!slug || !votingState.username.trim()) return
 
-    try {
-      setSubmitting(true)
-      setUsernameError(null)
-      
-      const response = await apiClient.claimUsername(slug, {
+    const result = await usernameOperation.execute(async () => {
+      return await apiClient.claimUsername(slug, {
         username: votingState.username.trim()
       })
-      
+    })
+
+    if (result) {
       // Store credentials in localStorage
-      localStorage.setItem(`voter_token_${slug}`, response.voter_token)
+      localStorage.setItem(`voter_token_${slug}`, result.voter_token)
       localStorage.setItem(`username_${slug}`, votingState.username.trim())
       
       setVotingState(prev => ({
         ...prev,
-        voterToken: response.voter_token,
+        voterToken: result.voter_token,
         username: votingState.username.trim()
       }))
-    } catch (error) {
-      if (error instanceof Error) {
-        setUsernameError(error.message)
-      } else {
-        setUsernameError('Failed to claim username')
-      }
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -128,29 +101,24 @@ export const VotePage = () => {
   }
 
   // Handle ballot submission
-  const handleSubmitBallot = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!slug || !votingState.voterToken || !pollState.data) return
+  const submitBallot = async () => {
+    if (!slug || !votingState.voterToken || !pollOperation.state.data) return
 
-    try {
-      setSubmitting(true)
-      setSubmitError(null)
-      
+    const result = await ballotOperation.execute(async () => {
       await apiClient.submitBallot(slug, {
-        voter_token: votingState.voterToken,
+        voter_token: votingState.voterToken!,
         ratings: votingState.ratings
       })
-      
+    })
+
+    if (result !== null) {
       setVotingState(prev => ({ ...prev, hasVoted: true }))
-    } catch (error) {
-      if (error instanceof Error) {
-        setSubmitError(error.message)
-      } else {
-        setSubmitError('Failed to submit ballot')
-      }
-    } finally {
-      setSubmitting(false)
     }
+  }
+
+  const handleSubmitBallot = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await submitBallot()
   }
 
   // Navigate to results
@@ -166,24 +134,33 @@ export const VotePage = () => {
   }
 
   // Loading state
-  if (pollState.loading) {
-    return (
-      <Container>
-        <Card>
-          <p>Loading poll...</p>
-        </Card>
-      </Container>
-    )
+  if (pollOperation.state.loading) {
+    return <LoadingSpinner message="Loading poll..." />
   }
 
   // Error state
-  if (pollState.error || !pollState.data) {
+  if (pollOperation.state.error || !pollOperation.state.data) {
+    // Check if it's a network error
+    if (pollOperation.state.error?.includes('connect') || pollOperation.state.error?.includes('network')) {
+      return (
+        <NetworkError 
+          message={pollOperation.state.error}
+          onRetry={() => window.location.reload()}
+          onGoHome={() => navigate('/')}
+        />
+      )
+    }
+
     return (
       <Container>
         <Card>
-          <h1>Error</h1>
-          <p>{pollState.error || 'Poll not found'}</p>
-          <Button onClick={() => navigate('/')}>
+          <ErrorMessage
+            title="Poll Not Found"
+            message={pollOperation.state.error || 'The requested poll could not be found.'}
+            onRetry={() => window.location.reload()}
+            retryLabel="Reload Page"
+          />
+          <Button onClick={() => navigate('/')} fullWidth>
             Return to Home
           </Button>
         </Card>
@@ -191,7 +168,7 @@ export const VotePage = () => {
     )
   }
 
-  const { poll, options } = pollState.data
+  const { poll, options } = pollOperation.state.data
 
   // Poll closed state
   if (poll.status === 'closed') {
@@ -261,16 +238,17 @@ export const VotePage = () => {
               value={votingState.username}
               onChange={(value) => setVotingState(prev => ({ ...prev, username: value }))}
               placeholder="Enter your username"
-              error={usernameError || undefined}
+              error={usernameOperation.state.error || undefined}
+              required
             />
             
             <div style={{ marginTop: '24px' }}>
               <Button 
                 type="submit" 
-                disabled={submitting || !votingState.username.trim()}
+                disabled={usernameOperation.state.loading || !votingState.username.trim()}
                 fullWidth
               >
-                {submitting ? 'Claiming...' : 'Claim Username'}
+                {usernameOperation.state.loading ? 'Claiming...' : 'Claim Username'}
               </Button>
             </div>
           </form>
@@ -308,24 +286,20 @@ export const VotePage = () => {
             ))}
           </div>
 
-          {submitError && (
-            <div style={{ 
-              marginBottom: '16px', 
-              padding: '12px', 
-              border: '1px solid #d32f2f', 
-              backgroundColor: '#ffebee',
-              borderRadius: '4px'
-            }}>
-              <p style={{ color: '#d32f2f', margin: 0 }}>{submitError}</p>
-            </div>
+          {ballotOperation.state.error && (
+            <ErrorMessage 
+              message={ballotOperation.state.error}
+              onRetry={submitBallot}
+              retryLabel="Try Submitting Again"
+            />
           )}
 
           <Button 
             type="submit" 
-            disabled={submitting}
+            disabled={ballotOperation.state.loading}
             fullWidth
           >
-            {submitting ? 'Submitting...' : 'Submit Ballot'}
+            {ballotOperation.state.loading ? 'Submitting...' : 'Submit Ballot'}
           </Button>
         </form>
       </Card>
