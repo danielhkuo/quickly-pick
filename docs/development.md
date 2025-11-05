@@ -50,7 +50,7 @@ Edit `.env` with your database connection:
 
 ```env
 DATABASE_URL=postgres://user:password@localhost:5432/quicklypick?sslmode=disable
-PORT=8080
+PORT=3318
 ```
 
 ### 4. Install Dependencies
@@ -66,7 +66,7 @@ go mod download
 go run main.go
 ```
 
-The server will start on `http://localhost:8080` and automatically create the database schema.
+The server will start on `http://localhost:3318` and automatically create the database schema.
 
 ## Development Workflow
 
@@ -164,7 +164,7 @@ go run main.go --help
 
 | Flag | Environment Variable | Default | Description |
 |------|---------------------|---------|-------------|
-| `--port` | `PORT` | `8080` | HTTP server port |
+| `--port` | `PORT` | `3318` | HTTP server port |
 | `--database-url` | `DATABASE_URL` | Required | PostgreSQL connection string |
 
 ## API Testing
@@ -173,10 +173,10 @@ go run main.go --help
 
 ```bash
 # Health check
-curl http://localhost:8080/health
+curl http://localhost:3318/health
 
 # Create a poll
-curl -X POST http://localhost:8080/polls \
+curl -X POST http://localhost:3318/polls \
   -H "Content-Type: application/json" \
   -d '{"title":"Test Poll","creator_name":"Dev"}'
 ```
@@ -188,7 +188,7 @@ curl -X POST http://localhost:8080/polls \
 pip install httpie
 
 # Create poll
-http POST localhost:8080/polls title="Test Poll" creator_name="Dev"
+http POST localhost:3318/polls title="Test Poll" creator_name="Dev"
 ```
 
 ## Debugging
@@ -222,7 +222,7 @@ log_min_duration_statement = 0
 
 #### Port Already in Use
 - Change port: `go run main.go --port 8081`
-- Or kill process using port: `lsof -ti:8080 | xargs kill`
+- Or kill process using port: `lsof -ti:3318 | xargs kill`
 
 ## IDE Setup
 
@@ -265,12 +265,12 @@ docs(readme): update installation instructions
 go install github.com/rakyll/hey@latest
 
 # Test health endpoint
-hey -n 1000 -c 10 http://localhost:8080/health
+hey -n 1000 -c 10 http://localhost:3318/health
 
 # Test poll creation
 hey -n 100 -c 5 -m POST -H "Content-Type: application/json" \
   -d '{"title":"Load Test","creator_name":"Bot"}' \
-  http://localhost:8080/polls
+  http://localhost:3318/polls
 ```
 
 ## Docker Development
@@ -282,7 +282,7 @@ hey -n 100 -c 5 -m POST -H "Content-Type: application/json" \
 docker build -t quickly-pick ./server
 
 # Run container
-docker run -p 8080:8080 --env-file server/.env quickly-pick
+docker run -p 3318:3318 --env-file server/.env quickly-pick
 ```
 
 ### Docker Compose Full Stack

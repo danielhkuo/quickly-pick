@@ -36,7 +36,7 @@ func main() {
     mux := router.NewRouter(db, cfg)
     
     server := &http.Server{
-        Addr:    ":8080",
+        Addr:    ":3318",
         Handler: mux,
     }
     
@@ -412,7 +412,7 @@ db.SetConnMaxLifetime(5 * time.Minute)
 ### Request Timeouts
 ```go
 server := &http.Server{
-    Addr:         ":8080",
+    Addr:         ":3318",
     Handler:      mux,
     ReadTimeout:  15 * time.Second,
     WriteTimeout: 15 * time.Second,

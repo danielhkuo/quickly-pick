@@ -44,7 +44,7 @@ fmt.Printf("Starting server on port %d\n", cfg.Port)
 
 | Flag | Environment Variable | Default | Description |
 |------|---------------------|---------|-------------|
-| `--port` | `PORT` | `8080` | HTTP server port |
+| `--port` | `PORT` | `3318` | HTTP server port |
 | `--database-url` | `DATABASE_URL` | *required* | PostgreSQL connection string |
 | `--admin-key-salt` | `ADMIN_KEY_SALT` | `"default-admin-salt"` | Salt for admin key generation |
 | `--poll-slug-salt` | `POLL_SLUG_SALT` | `"default-slug-salt"` | Salt for share slug generation |
@@ -62,7 +62,7 @@ fmt.Printf("Starting server on port %d\n", cfg.Port)
 
 # All options
 ./server \
-  --port 8080 \
+  --port 3318 \
   --database-url "postgres://user:pass@localhost/quicklypick" \
   --admin-key-salt "my-secret-admin-salt" \
   --poll-slug-salt "my-secret-slug-salt"
@@ -72,7 +72,7 @@ fmt.Printf("Starting server on port %d\n", cfg.Port)
 
 ```bash
 # Set environment variables
-export PORT=8080
+export PORT=3318
 export DATABASE_URL="postgres://user:pass@localhost/quicklypick"
 export ADMIN_KEY_SALT="production-admin-salt"
 export POLL_SLUG_SALT="production-slug-salt"
@@ -97,7 +97,7 @@ The parser validates configuration values:
 
 ### Port Validation
 - Must be between 1 and 65535
-- Common ports (80, 443, 8080, 3000) are recommended
+- Common ports (80, 443, 3318, 3000) are recommended
 
 ### Database URL Validation
 - Must be a valid PostgreSQL connection string

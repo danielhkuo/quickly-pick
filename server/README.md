@@ -28,13 +28,13 @@ go mod download
 
 # Set environment variables
 export DATABASE_URL="postgres://user:password@localhost:5432/quicklypick?sslmode=disable"
-export PORT=8080
+export PORT=3318
 
 # Run server
 go run main.go
 ```
 
-The server will start on `http://localhost:8080` and automatically create the database schema.
+The server will start on `http://localhost:3318` and automatically create the database schema.
 
 ### Production Deployment
 
@@ -44,7 +44,7 @@ go build -o quickly-pick main.go
 
 # Run with production settings
 ./quickly-pick \
-  --port 8080 \
+  --port 3318 \
   --database-url "postgres://user:pass@host:5432/quicklypick?sslmode=require" \
   --admin-key-salt "$(openssl rand -hex 32)" \
   --poll-slug-salt "$(openssl rand -hex 32)"
@@ -145,7 +145,7 @@ GET /health
 
 | Flag | Environment Variable | Default | Description |
 |------|---------------------|---------|-------------|
-| `--port` | `PORT` | `8080` | HTTP server port |
+| `--port` | `PORT` | `3318` | HTTP server port |
 | `--database-url` | `DATABASE_URL` | *required* | PostgreSQL connection string |
 | `--admin-key-salt` | `ADMIN_KEY_SALT` | `"default-admin-salt"` | Salt for admin key generation |
 | `--poll-slug-salt` | `POLL_SLUG_SALT` | `"default-slug-salt"` | Salt for share slug generation |
@@ -154,7 +154,7 @@ GET /health
 
 ```env
 # Development configuration
-PORT=8080
+PORT=3318
 DATABASE_URL=postgres://user:password@localhost:5432/quicklypick_dev?sslmode=disable
 ADMIN_KEY_SALT=dev-admin-salt-not-for-production
 POLL_SLUG_SALT=dev-slug-salt-not-for-production
@@ -284,7 +284,7 @@ dropdb quicklypick && createdb quicklypick
 ### Health Check
 
 ```bash
-curl http://localhost:8080/health
+curl http://localhost:3318/health
 ```
 
 ### Structured Logging
@@ -323,7 +323,7 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/main .
-EXPOSE 8080
+EXPOSE 3318
 CMD ["./main"]
 ```
 
@@ -340,7 +340,7 @@ User=quickly-pick
 ExecStart=/usr/local/bin/quickly-pick
 Restart=always
 Environment=DATABASE_URL=postgres://...
-Environment=PORT=8080
+Environment=PORT=3318
 
 [Install]
 WantedBy=multi-user.target
@@ -354,7 +354,7 @@ server {
     server_name yourdomain.com;
     
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:3318;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -401,7 +401,7 @@ server {
 
 **"port already in use"**
 - Change port: `--port 8081`
-- Kill process: `lsof -ti:8080 | xargs kill`
+- Kill process: `lsof -ti:3318 | xargs kill`
 
 ### Debug Mode
 

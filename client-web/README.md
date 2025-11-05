@@ -37,7 +37,7 @@ Builds the app for production to the `dist` folder.
 
 Copy `.env.example` to `.env` and configure:
 
-- `VITE_API_BASE_URL`: Base URL for the API server (default: http://localhost:8080)
+- `VITE_API_BASE_URL`: Base URL for the API server (default: http://localhost:3318)
 
 ## Project Structure
 

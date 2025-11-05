@@ -5,7 +5,7 @@ The Quickly Pick API provides REST endpoints for creating polls, voting, and ret
 ## Base URL
 
 ```
-http://localhost:8080
+http://localhost:3318
 ```
 
 ## Authentication
