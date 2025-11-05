@@ -106,9 +106,8 @@ export const VotePage = () => {
 
     const result = await ballotOperation.execute(async () => {
       await apiClient.submitBallot(slug, {
-        voter_token: votingState.voterToken!,
-        ratings: votingState.ratings
-      })
+        scores: votingState.ratings
+      }, votingState.voterToken!)
     })
 
     if (result !== null) {

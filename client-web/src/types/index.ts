@@ -52,24 +52,16 @@ export interface CreatePollRequest {
 
 export interface AddOptionRequest {
   label: string
-  position: number
 }
 
-export interface PublishPollRequest {
-  admin_key: string
-}
 
-export interface ClosePollRequest {
-  admin_key: string
-}
 
 export interface ClaimUsernameRequest {
   username: string
 }
 
 export interface SubmitBallotRequest {
-  voter_token: string
-  ratings: Record<string, number> // option_id -> rating (0.0 to 1.0)
+  scores: Record<string, number> // option_id -> rating (0.0 to 1.0)
 }
 
 export interface GetPollResponse {

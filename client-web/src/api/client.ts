@@ -4,14 +4,11 @@ import type {
   CreatePollRequest,
   CreatePollResponse,
   AddOptionRequest,
-  PublishPollRequest,
-  ClosePollRequest,
   ClaimUsernameRequest,
   ClaimUsernameResponse,
   SubmitBallotRequest,
   GetPollResponse,
-  GetResultsResponse,
-  Option
+  GetResultsResponse
 } from '../types'
 
 /**
@@ -87,20 +84,7 @@ class ApiClient {
     })
   }
 
-  /**
-   * PUT request helper
-   */
-  private put<T>(
-    endpoint: string,
-    data?: unknown,
-    headers?: Record<string, string>
-  ): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-      headers,
-    })
-  }
+
 
   // Poll Management Functions
 
@@ -108,38 +92,45 @@ class ApiClient {
    * Create a new poll
    */
   async createPoll(pollData: CreatePollRequest): Promise<CreatePollResponse> {
-    return this.post<CreatePollResponse>('/api/polls', pollData)
+    return this.post<CreatePollResponse>('/polls', pollData)
   }
 
   /**
    * Add an option to a poll
    */
-  async addOption(pollId: string, optionData: AddOptionRequest, adminKey: string): Promise<Option> {
-    return this.post<Option>(`/api/polls/${pollId}/options`, optionData, {
-      'Authorization': `Bearer ${adminKey}`
+  async addOption(pollId: string, optionData: AddOptionRequest, adminKey: string): Promise<{ option_id: string }> {
+    return this.post<{ option_id: string }>(`/polls/${pollId}/options`, optionData, {
+      'X-Admin-Key': adminKey
     })
   }
 
   /**
    * Publish a poll (make it available for voting)
    */
-  async publishPoll(pollId: string, publishData: PublishPollRequest): Promise<void> {
-    return this.put<void>(`/api/polls/${pollId}/publish`, publishData)
+  async publishPoll(pollId: string, adminKey: string): Promise<void> {
+    return this.post<void>(`/polls/${pollId}/publish`, {}, {
+      'X-Admin-Key': adminKey
+    })
   }
 
   /**
    * Close a poll (stop accepting votes)
    */
-  async closePoll(pollId: string, closeData: ClosePollRequest): Promise<void> {
-    return this.put<void>(`/api/polls/${pollId}/close`, closeData)
+  async closePoll(pollId: string, adminKey: string): Promise<void> {
+    return this.post<void>(`/polls/${pollId}/close`, {}, {
+      'X-Admin-Key': adminKey
+    })
   }
 
   /**
    * Get poll status and metadata (admin view)
+   * Note: Backend doesn't have /admin/polls endpoint, use regular getPoll
    */
   async getPollAdmin(pollId: string, adminKey: string): Promise<GetPollResponse> {
-    return this.get<GetPollResponse>(`/api/admin/polls/${pollId}`, {
-      'Authorization': `Bearer ${adminKey}`
+    // Backend uses slug, not pollId - you may need to store the slug
+    // For now, treating pollId as slug
+    return this.get<GetPollResponse>(`/polls/${pollId}`, {
+      'X-Admin-Key': adminKey
     })
   }
 
@@ -149,21 +140,24 @@ class ApiClient {
    * Get poll details for voting
    */
   async getPoll(slug: string): Promise<GetPollResponse> {
-    return this.get<GetPollResponse>(`/api/polls/${slug}`)
+    return this.get<GetPollResponse>(`/polls/${slug}`)
   }
 
   /**
    * Claim a username for voting
    */
   async claimUsername(slug: string, usernameData: ClaimUsernameRequest): Promise<ClaimUsernameResponse> {
-    return this.post<ClaimUsernameResponse>(`/api/polls/${slug}/claim-username`, usernameData)
+    return this.post<ClaimUsernameResponse>(`/polls/${slug}/claim-username`, usernameData)
   }
 
   /**
    * Submit a ballot with ratings
+   * Note: Backend uses /ballots endpoint, not /vote
    */
-  async submitBallot(slug: string, ballotData: SubmitBallotRequest): Promise<void> {
-    return this.post<void>(`/api/polls/${slug}/vote`, ballotData)
+  async submitBallot(slug: string, ballotData: SubmitBallotRequest, voterToken: string): Promise<void> {
+    return this.post<void>(`/polls/${slug}/ballots`, ballotData, {
+      'X-Voter-Token': voterToken
+    })
   }
 
   // Results Functions
@@ -172,14 +166,14 @@ class ApiClient {
    * Get poll results
    */
   async getResults(slug: string): Promise<GetResultsResponse> {
-    return this.get<GetResultsResponse>(`/api/polls/${slug}/results`)
+    return this.get<GetResultsResponse>(`/polls/${slug}/results`)
   }
 
   /**
    * Get ballot count for a poll
    */
   async getBallotCount(slug: string): Promise<{ ballot_count: number }> {
-    return this.get<{ ballot_count: number }>(`/api/polls/${slug}/ballot-count`)
+    return this.get<{ ballot_count: number }>(`/polls/${slug}/ballot-count`)
   }
 }
 

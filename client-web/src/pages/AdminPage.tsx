@@ -53,7 +53,7 @@ export const AdminPage = () => {
     if (!pollId || !adminKey || !pollOperation.state.data) return
 
     const result = await closeOperation.execute(async () => {
-      await apiClient.closePoll(pollId, { admin_key: adminKey })
+      await apiClient.closePoll(pollId, adminKey)
     })
 
     if (result !== null) {

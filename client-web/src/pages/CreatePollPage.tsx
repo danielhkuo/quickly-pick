@@ -127,19 +127,15 @@ export const CreatePollPage = () => {
 
       // Step 2: Add all options
       const validOptions = options.filter(opt => opt.label.trim())
-      for (let i = 0; i < validOptions.length; i++) {
-        const option = validOptions[i]
+      for (const option of validOptions) {
         const addOptionRequest: AddOptionRequest = {
-          label: option.label.trim(),
-          position: i + 1
+          label: option.label.trim()
         }
         await apiClient.addOption(createResponse.poll_id, addOptionRequest, createResponse.admin_key)
       }
 
       // Step 3: Publish the poll
-      await apiClient.publishPoll(createResponse.poll_id, {
-        admin_key: createResponse.admin_key
-      })
+      await apiClient.publishPoll(createResponse.poll_id, createResponse.admin_key)
 
       return createResponse
     })
