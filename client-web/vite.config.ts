@@ -19,5 +19,7 @@ export default defineConfig({
         }
       }
     }
-  }
+  },
+  // SPA routing support - serve index.html for all routes
+  // This is handled by the _redirects file for deployment platforms
 })
