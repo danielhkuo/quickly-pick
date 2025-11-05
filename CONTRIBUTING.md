@@ -391,10 +391,22 @@ We use semantic versioning (SemVer):
 
 ### Resources
 
+- [Documentation Overview](docs/README.md)
 - [Development Setup](docs/development.md)
 - [API Documentation](docs/api.md)
 - [Database Schema](docs/database.md)
 - [Algorithm Guide](docs/algorithm.md)
+- [Server Documentation](server/README.md)
+
+### Package Documentation
+
+- [Authentication](server/auth/README.md)
+- [Configuration](server/cliparse/README.md)
+- [Database](server/db/README.md)
+- [Handlers](server/handlers/README.md)
+- [Middleware](server/middleware/README.md)
+- [Models](server/models/README.md)
+- [Router](server/router/README.md)
 
 ## Recognition
 

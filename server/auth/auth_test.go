@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Daniel Kuo.
+// Source-available; no permission granted to use, copy, modify, or distribute. See LICENSE.
+
 package auth
 
 import (
@@ -56,18 +59,18 @@ func TestGenerateAdminKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			key := GenerateAdminKey(tt.pollID, tt.salt)
-			
+
 			// Should not be empty
 			if key == "" {
 				t.Error("GenerateAdminKey() returned empty string")
 			}
-			
+
 			// Should be deterministic
 			key2 := GenerateAdminKey(tt.pollID, tt.salt)
 			if key != key2 {
 				t.Error("GenerateAdminKey() is not deterministic")
 			}
-			
+
 			// Different inputs should produce different keys
 			if tt.pollID != "" && tt.salt != "" {
 				differentKey := GenerateAdminKey(tt.pollID+"x", tt.salt)
@@ -75,7 +78,7 @@ func TestGenerateAdminKey(t *testing.T) {
 					t.Error("GenerateAdminKey() produced same key for different poll IDs")
 				}
 			}
-			
+
 			// Should be URL-safe (no padding)
 			if strings.Contains(key, "=") {
 				t.Error("GenerateAdminKey() contains padding characters")
@@ -122,21 +125,21 @@ func TestGenerateVoterToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GenerateVoterToken() error = %v", err)
 	}
-	
+
 	if token == "" {
 		t.Error("GenerateVoterToken() returned empty string")
 	}
-	
+
 	// Should be URL-safe (no padding)
 	if strings.Contains(token, "=") {
 		t.Error("GenerateVoterToken() contains padding characters")
 	}
-	
+
 	// Should be reasonably long (24 bytes encoded)
 	if len(token) < 30 {
 		t.Errorf("GenerateVoterToken() too short: %d chars", len(token))
 	}
-	
+
 	// Test randomness - should not produce duplicates
 	tokens := make(map[string]bool)
 	for i := 0; i < 100; i++ {
@@ -165,23 +168,23 @@ func TestGenerateShareSlug(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			slug := GenerateShareSlug(tt.pollID, tt.salt)
-			
+
 			// Should not be empty
 			if slug == "" {
 				t.Error("GenerateShareSlug() returned empty string")
 			}
-			
+
 			// Should be deterministic
 			slug2 := GenerateShareSlug(tt.pollID, tt.salt)
 			if slug != slug2 {
 				t.Error("GenerateShareSlug() is not deterministic")
 			}
-			
+
 			// Should be reasonably short
 			if len(slug) > 15 {
 				t.Errorf("GenerateShareSlug() too long: %d chars", len(slug))
 			}
-			
+
 			// Should be URL-safe (alphanumeric only)
 			for _, c := range slug {
 				if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
@@ -197,7 +200,7 @@ func TestGenerateShareSlug(t *testing.T) {
 	if slug1 == slug2 {
 		t.Error("GenerateShareSlug() produced same slug for different poll IDs")
 	}
-	
+
 	slug3 := GenerateShareSlug("poll1", "salt1")
 	slug4 := GenerateShareSlug("poll1", "salt2")
 	if slug3 == slug4 {
@@ -219,19 +222,19 @@ func TestBase62Encode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := base62Encode(tt.input)
-			
+
 			// Should not be empty (except for all zeros -> "0")
 			if result == "" {
 				t.Error("base62Encode() returned empty string")
 			}
-			
+
 			// Should only contain base62 characters
 			for _, c := range result {
 				if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 					t.Errorf("base62Encode() contains invalid char: %c", c)
 				}
 			}
-			
+
 			// Should be deterministic
 			result2 := base62Encode(tt.input)
 			if result != result2 {
@@ -239,7 +242,7 @@ func TestBase62Encode(t *testing.T) {
 			}
 		})
 	}
-	
+
 	// Different inputs should produce different outputs
 	out1 := base62Encode([]byte{1, 2, 3, 4})
 	out2 := base62Encode([]byte{5, 6, 7, 8})
@@ -262,24 +265,24 @@ func TestHashIP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hash := HashIP(tt.ip, tt.salt)
-			
+
 			// Should not be empty
 			if hash == "" {
 				t.Error("HashIP() returned empty string")
 			}
-			
+
 			// Should be 16 hex characters (8 bytes * 2)
 			if len(hash) != 16 {
 				t.Errorf("HashIP() length = %d, want 16", len(hash))
 			}
-			
+
 			// Should be valid hex
 			for _, c := range hash {
 				if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
 					t.Errorf("HashIP() contains invalid hex char: %c", c)
 				}
 			}
-			
+
 			// Should be deterministic
 			hash2 := HashIP(tt.ip, tt.salt)
 			if hash != hash2 {
@@ -294,7 +297,7 @@ func TestHashIP(t *testing.T) {
 	if hash1 == hash2 {
 		t.Error("HashIP() produced same hash for different IPs")
 	}
-	
+
 	// Different salts should produce different hashes
 	hash3 := HashIP("192.168.1.1", "salt1")
 	hash4 := HashIP("192.168.1.1", "salt2")

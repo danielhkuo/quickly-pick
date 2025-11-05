@@ -1,21 +1,41 @@
-MIT License
+# Daniel Kuo Source-Available No-Use License (DK-NUL-1.0)
 
-Copyright (c) 2024 Quickly Pick Contributors
+Copyright (c) 2025 Daniel Kuo. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## 1. Definitions
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+“Work” means the software and any associated materials in this repository.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+## 2. No license granted (except Section 3)
+
+No rights are granted to any person or entity to use, copy, modify, merge, compile, execute, publish, distribute, sublicense, host, or create derivative works from the Work, for any purpose, commercial or noncommercial.
+
+## 3. Limited right to view
+
+You may access and view the source code as displayed on the repository hosting service where it appears. You may make incidental, transient copies automatically created by your browser solely for that viewing. **All other uses are prohibited.**
+
+## 4. Exclusive use by the author
+
+Notwithstanding the prohibitions above, **Daniel Kuo** (the copyright holder) retains full rights to use, copy, modify, publish, distribute, and license the Work.
+
+## 5. Prohibited uses (non-exhaustive)
+
+Without limitation: executing the Work; redistributing any portion; incorporating any portion into other software; training or fine-tuning machine-learning models on the Work or its outputs; or offering any service that exposes the Work or derivatives.
+
+## 6. No trademark or patent licenses
+
+No trademark rights or patent licenses are granted.
+
+## 7. Warranty disclaimer
+
+THE WORK IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+## 8. Limitation of liability
+
+IN NO EVENT WILL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DAMAGES ARISING FROM OR IN CONNECTION WITH THIS LICENSE OR THE WORK.
+
+## 9. Termination
+
+Any breach of this license immediately terminates the rights in Section 3. Upon termination, you must cease all access and destroy any copies made in violation of this license.
+
+SPDX-License-Identifier: LicenseRef-DK-NUL-1.0

@@ -44,7 +44,7 @@ Content-Type: application/json
 ```http
 POST /polls/:id/options
 Content-Type: application/json
-Authorization: Bearer admin_xyz789
+X-Admin-Key: admin_xyz789
 
 {
   "label": "Pepperoni"
@@ -62,7 +62,7 @@ Authorization: Bearer admin_xyz789
 
 ```http
 POST /polls/:id/publish
-Authorization: Bearer admin_xyz789
+X-Admin-Key: admin_xyz789
 ```
 
 **Response:**
@@ -76,7 +76,7 @@ Authorization: Bearer admin_xyz789
 
 ```http
 POST /polls/:id/close
-Authorization: Bearer admin_xyz789
+X-Admin-Key: admin_xyz789
 ```
 
 **Response:**
@@ -126,19 +126,13 @@ Content-Type: application/json
 ```http
 POST /polls/:slug/ballots
 Content-Type: application/json
-Authorization: Bearer voter_jkl012
+X-Voter-Token: voter_jkl012
 
 {
-  "scores": [
-    {
-      "option_id": "opt_def456",
-      "value01": 0.8
-    },
-    {
-      "option_id": "opt_mno345",
-      "value01": 0.2
-    }
-  ]
+  "scores": {
+    "opt_def456": 0.8,
+    "opt_mno345": 0.2
+  }
 }
 ```
 
@@ -214,6 +208,19 @@ GET /polls/:slug/results
 {
   "error": "Results not available while poll is open",
   "status": 403
+}
+```
+
+#### Get Ballot Count
+
+```http
+GET /polls/:slug/ballot-count
+```
+
+**Response:**
+```json
+{
+  "ballot_count": 42
 }
 ```
 

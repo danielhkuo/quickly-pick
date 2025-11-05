@@ -1,4 +1,6 @@
-// cliparse/cliparse_test.go
+// Copyright (c) 2025 Daniel Kuo.
+// Source-available; no permission granted to use, copy, modify, or distribute. See LICENSE.
+
 package cliparse
 
 import (

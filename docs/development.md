@@ -122,19 +122,35 @@ docker-compose -f docker-postgres-compose.yml exec postgres psql -U user -d quic
 ```
 server/
 ├── auth/              # Authentication utilities
-│   ├── auth.go        # JWT token handling
+│   ├── auth.go        # Token generation and validation
 │   ├── auth_test.go   # Auth tests
 │   └── README.md      # Auth documentation
 ├── cliparse/          # CLI argument parsing
 │   ├── cliparse.go    # Configuration parsing
-│   └── cliparse_test.go
+│   ├── cliparse_test.go
+│   └── README.md      # CLI documentation
 ├── db/                # Database operations
-│   └── schema.go      # Schema creation
+│   ├── schema.go      # Schema creation
+│   └── README.md      # Database documentation
+├── handlers/          # HTTP request handlers
+│   ├── polls.go       # Poll management handlers
+│   ├── voting.go      # Voting handlers
+│   ├── results.go     # Results handlers
+│   ├── *_test.go      # Handler tests
+│   └── README.md      # Handler documentation
+├── middleware/        # HTTP middleware
+│   ├── middleware.go  # Logging, JSON responses, utilities
+│   └── README.md      # Middleware documentation
+├── models/            # Data types and structures
+│   ├── types.go       # Request/response types, domain models
+│   └── README.md      # Models documentation
 ├── router/            # HTTP routing
-│   └── router.go      # Route definitions and handlers
+│   ├── router.go      # Route definitions and setup
+│   └── README.md      # Router documentation
 ├── .env               # Environment variables
 ├── go.mod             # Go module definition
 ├── go.sum             # Go module checksums
+├── README.md          # Server documentation
 └── main.go            # Application entry point
 ```
 
