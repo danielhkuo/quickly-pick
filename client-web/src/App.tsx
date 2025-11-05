@@ -3,10 +3,10 @@ import { Suspense } from 'react'
 import { VotePage } from './pages/VotePage'
 import { ResultsPage } from './pages/ResultsPage'
 import { CreatePollPage } from './pages/CreatePollPage'
+import { AdminPage } from './pages/AdminPage'
 
 // Placeholder components for now - will be implemented in later tasks
 const HomePage = () => <div>Home Page - Coming Soon</div>
-const AdminPage = () => <div>Admin Page - Coming Soon</div>
 
 function App() {
   return (
