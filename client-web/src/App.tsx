@@ -2,10 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Suspense } from 'react'
 import { VotePage } from './pages/VotePage'
 import { ResultsPage } from './pages/ResultsPage'
+import { CreatePollPage } from './pages/CreatePollPage'
 
 // Placeholder components for now - will be implemented in later tasks
 const HomePage = () => <div>Home Page - Coming Soon</div>
-const CreatePollPage = () => <div>Create Poll Page - Coming Soon</div>
 const AdminPage = () => <div>Admin Page - Coming Soon</div>
 
 function App() {
