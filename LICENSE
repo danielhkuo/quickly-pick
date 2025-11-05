@@ -1,41 +1,52 @@
-# Daniel Kuo Source-Available No-Use License (DK-NUL-1.0)
+Daniel Kuo Source-Available No-Use License (DK-NUL-1.0)
 
 Copyright (c) 2025 Daniel Kuo. All rights reserved.
 
-## 1. Definitions
+1. Definitions
 
-“Work” means the software and any associated materials in this repository.
+"Work" means the software and any associated materials in this repository.
 
-## 2. No license granted (except Section 3)
+2. No License Granted (Except Section 3)
 
-No rights are granted to any person or entity to use, copy, modify, merge, compile, execute, publish, distribute, sublicense, host, or create derivative works from the Work, for any purpose, commercial or noncommercial.
+No rights are granted to any person or entity to use, copy, modify, merge, 
+compile, execute, publish, distribute, sublicense, host, or create derivative 
+works from the Work, for any purpose, commercial or noncommercial.
 
-## 3. Limited right to view
+3. Limited Right to View
 
-You may access and view the source code as displayed on the repository hosting service where it appears. You may make incidental, transient copies automatically created by your browser solely for that viewing. **All other uses are prohibited.**
+You may access and view the source code as displayed on the repository hosting 
+service where it appears. You may make incidental, transient copies automatically 
+created by your browser solely for that viewing. All other uses are prohibited.
 
-## 4. Exclusive use by the author
+4. Exclusive Use by the Author
 
-Notwithstanding the prohibitions above, **Daniel Kuo** (the copyright holder) retains full rights to use, copy, modify, publish, distribute, and license the Work.
+Notwithstanding the prohibitions above, Daniel Kuo (the copyright holder) retains 
+full rights to use, copy, modify, publish, distribute, and license the Work.
 
-## 5. Prohibited uses (non-exhaustive)
+5. Prohibited Uses (Non-Exhaustive)
 
-Without limitation: executing the Work; redistributing any portion; incorporating any portion into other software; training or fine-tuning machine-learning models on the Work or its outputs; or offering any service that exposes the Work or derivatives.
+Without limitation: executing the Work; redistributing any portion; incorporating 
+any portion into other software; training or fine-tuning machine-learning models 
+on the Work or its outputs; or offering any service that exposes the Work or 
+derivatives.
 
-## 6. No trademark or patent licenses
+6. No Trademark or Patent Licenses
 
 No trademark rights or patent licenses are granted.
 
-## 7. Warranty disclaimer
+7. Warranty Disclaimer
 
-THE WORK IS PROVIDED “AS IS” WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+THE WORK IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
 
-## 8. Limitation of liability
+8. Limitation of Liability
 
-IN NO EVENT WILL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DAMAGES ARISING FROM OR IN CONNECTION WITH THIS LICENSE OR THE WORK.
+IN NO EVENT WILL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DAMAGES ARISING FROM OR 
+IN CONNECTION WITH THIS LICENSE OR THE WORK.
 
-## 9. Termination
+9. Termination
 
-Any breach of this license immediately terminates the rights in Section 3. Upon termination, you must cease all access and destroy any copies made in violation of this license.
+Any breach of this license immediately terminates the rights in Section 3. Upon 
+termination, you must cease all access and destroy any copies made in violation 
+of this license.
 
 SPDX-License-Identifier: LicenseRef-DK-NUL-1.0
