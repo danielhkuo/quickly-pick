@@ -64,6 +64,30 @@ func ParseJSONBody(r *http.Request, v interface{}) error {
 	return nil
 }
 
+// CORS middleware allows cross-origin requests from the frontend
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allow requests from Vite dev server and production domains
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			origin = "*"
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		// Handle preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // GetClientIP extracts the client IP address
 // Checks X-Forwarded-For, X-Real-IP, then falls back to RemoteAddr
 func GetClientIP(r *http.Request) string {
