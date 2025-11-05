@@ -58,8 +58,7 @@ Create a poll, share a link, everyone votes with a slider per option. Results ar
 │   ├── models/            # Data types and structures
 │   ├── router/            # HTTP routing and endpoints
 │   └── main.go            # Application entry point
-├── docs/                  # Documentation
-└── MVP.md                 # Product specification
+└── docs/                  # Documentation
 ```
 
 ## Contributing
