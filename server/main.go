@@ -17,6 +17,7 @@ import (
 
 	"github.com/danielhkuo/quickly-pick/cliparse"
 	"github.com/danielhkuo/quickly-pick/db"
+	"github.com/danielhkuo/quickly-pick/middleware"
 	"github.com/danielhkuo/quickly-pick/router"
 )
 
@@ -59,9 +60,9 @@ func main() {
 	// Create router
 	mux := router.NewRouter(dbConn, cfg)
 
-	// Create server
+	// Create server with CORS middleware
 	server := http.Server{
-		Handler: mux,
+		Handler: middleware.CORS(mux),
 		Addr:    ":" + strconv.Itoa(cfg.Port),
 	}
 

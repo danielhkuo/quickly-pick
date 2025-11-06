@@ -103,7 +103,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 
 func getTestConfig() cliparse.Config {
 	return cliparse.Config{
-		Port:         8080,
+		Port:         3318,
 		DatabaseURL:  "postgres://test",
 		AdminKeySalt: "test-admin-salt",
 		PollSlugSalt: "test-slug-salt",

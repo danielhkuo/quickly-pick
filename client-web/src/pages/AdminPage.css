@@ -1,0 +1,148 @@
+.admin-page {
+  padding: 16px 0;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 48px 16px;
+  font-size: 18px;
+}
+
+.error-message {
+  padding: 16px;
+  border: 1px solid;
+  margin-bottom: 24px;
+  background-color: transparent;
+}
+
+.poll-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.poll-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border: 1px solid;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.status-draft {
+  opacity: 0.7;
+}
+
+.status-open {
+  /* Use browser default styling */
+}
+
+.status-closed {
+  opacity: 0.8;
+}
+
+.poll-description {
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.poll-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.metadata-item {
+  font-size: 16px;
+}
+
+.metadata-item strong {
+  margin-right: 8px;
+}
+
+.options-list {
+  margin: 0;
+  padding-left: 24px;
+}
+
+.option-item {
+  margin-bottom: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.share-link {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.poll-url {
+  padding: 12px;
+  border: 1px solid;
+  background-color: transparent;
+  font-family: monospace;
+  font-size: 14px;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.poll-notice {
+  text-align: center;
+}
+
+.poll-notice h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.poll-notice p {
+  margin: 0;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+/* Tablet and desktop responsive behavior */
+@media (min-width: 640px) {
+  .share-link {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .poll-url {
+    flex: 1;
+  }
+  
+  .admin-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .poll-metadata {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-actions {
+    justify-content: flex-start;
+  }
+}

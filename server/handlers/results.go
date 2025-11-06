@@ -163,7 +163,45 @@ func (h *ResultsHandler) GetResults(w http.ResponseWriter, r *http.Request) {
 	snapshot.Rankings = payload.Rankings
 	snapshot.InputsHash = payload.InputsHash
 
-	middleware.JSONResponse(w, http.StatusOK, snapshot)
+	// Get poll information for the response
+	var poll models.Poll
+	err = h.db.QueryRow(`
+		SELECT id, title, description, creator_name, method, status, 
+		       share_slug, closes_at, closed_at, final_snapshot_id, created_at
+		FROM poll
+		WHERE share_slug = $1
+	`, shareSlug).Scan(
+		&poll.ID, &poll.Title, &poll.Description, &poll.CreatorName,
+		&poll.Method, &poll.Status, &poll.ShareSlug, &poll.ClosesAt,
+		&poll.ClosedAt, &poll.FinalSnapshotID, &poll.CreatedAt,
+	)
+
+	if err != nil {
+		slog.Error("failed to query poll for results", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Get ballot count
+	var ballotCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM ballot WHERE poll_id = $1
+	`, poll.ID).Scan(&ballotCount)
+
+	if err != nil {
+		slog.Error("failed to count ballots for results", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Return results in the format expected by frontend
+	response := map[string]interface{}{
+		"poll":         poll,
+		"rankings":     snapshot.Rankings,
+		"ballot_count": ballotCount,
+	}
+
+	middleware.JSONResponse(w, http.StatusOK, response)
 }
 
 // GetBallotCount handles GET /polls/:slug/ballot-count (optional convenience endpoint)

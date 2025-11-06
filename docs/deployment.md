@@ -17,7 +17,7 @@ Set these environment variables in production:
 ```bash
 # Required
 DATABASE_URL=postgres://user:password@db-host:5432/quicklypick?sslmode=require
-PORT=8080
+PORT=3318
 
 # Optional
 LOG_LEVEL=info
@@ -47,7 +47,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=builder /app/main .
-EXPOSE 8080
+EXPOSE 3318
 CMD ["./main"]
 ```
 
@@ -61,7 +61,7 @@ docker build -t quickly-pick:latest .
 docker run -d \
   --name quickly-pick \
   --restart unless-stopped \
-  -p 8080:8080 \
+  -p 3318:3318 \
   -e DATABASE_URL="postgres://..." \
   quickly-pick:latest
 ```
@@ -77,14 +77,14 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "3318:3318"
     environment:
       - DATABASE_URL=postgres://user:password@db:5432/quicklypick
       - LOG_LEVEL=info
     depends_on:
       - db
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3318/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -140,7 +140,7 @@ RestartSec=5
 
 # Environment
 Environment=DATABASE_URL=postgres://user:password@localhost:5432/quicklypick
-Environment=PORT=8080
+Environment=PORT=3318
 Environment=LOG_LEVEL=info
 
 # Security
@@ -285,7 +285,7 @@ server {
     ssl_certificate_key /path/to/key.pem;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:3318;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -298,7 +298,7 @@ server {
     }
 
     location /health {
-        proxy_pass http://127.0.0.1:8080/health;
+        proxy_pass http://127.0.0.1:3318/health;
         access_log off;
     }
 }
@@ -316,11 +316,11 @@ sudo systemctl reload nginx
 ```caddyfile
 # Caddyfile
 yourdomain.com {
-    reverse_proxy localhost:8080
+    reverse_proxy localhost:3318
     
     # Health check endpoint
     handle /health {
-        reverse_proxy localhost:8080
+        reverse_proxy localhost:3318
         log {
             output discard
         }
@@ -361,7 +361,7 @@ Set up monitoring for the `/health` endpoint:
 ```bash
 # Simple health check script
 #!/bin/bash
-if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+if curl -f http://localhost:3318/health > /dev/null 2>&1; then
     echo "Service is healthy"
     exit 0
 else
