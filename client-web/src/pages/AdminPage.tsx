@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Container, Card, Button, LoadingSpinner, ErrorMessage, NetworkError } from '../components/common'
 import { useAsyncOperation } from '../hooks/useAsyncOperation'
@@ -18,7 +18,8 @@ export const AdminPage = () => {
   const [adminKey, setAdminKey] = useState<string | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
 
-  const loadPollData = useCallback(async (pollId: string, adminKey: string) => {
+  // React Compiler handles memoization - no need for useCallback
+  const loadPollData = async (pollId: string, adminKey: string) => {
     await pollOperation.execute(async () => {
       // First load poll data
       const pollResponse = await apiClient.getPollAdmin(pollId, adminKey)
@@ -35,7 +36,7 @@ export const AdminPage = () => {
         ballot_count: ballotCount
       }
     })
-  }, [pollOperation])
+  }
 
   useEffect(() => {
     if (!pollId) {
