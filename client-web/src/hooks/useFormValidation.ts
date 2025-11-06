@@ -14,7 +14,7 @@ interface UseFormValidationReturn<T> {
   setFieldError: (field: keyof T, error: string) => void
 }
 
-export function useFormValidation<T extends Record<string, any>>(
+export function useFormValidation<T extends Record<string, unknown>>(
   rules: ValidationRules<T>
 ): UseFormValidationReturn<T> {
   const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({})
@@ -121,7 +121,7 @@ export const validationRules = {
     return null
   },
 
-  minArrayLength: (min: number, message?: string) => (value: any[]): string | null => {
+  minArrayLength: (min: number, message?: string) => (value: unknown[]): string | null => {
     if (value && value.length < min) {
       return message || `Must have at least ${min} items`
     }
