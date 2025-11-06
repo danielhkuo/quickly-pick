@@ -9,8 +9,6 @@ export type {
   CreatePollRequest,
   CreatePollResponse,
   AddOptionRequest,
-  PublishPollRequest,
-  ClosePollRequest,
   ClaimUsernameRequest,
   ClaimUsernameResponse,
   SubmitBallotRequest,

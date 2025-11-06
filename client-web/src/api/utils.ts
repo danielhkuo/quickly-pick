@@ -4,8 +4,7 @@ import type {
   CreatePollResponse,
   AddOptionRequest,
   GetPollResponse,
-  GetResultsResponse,
-  Option
+  GetResultsResponse
 } from '../types'
 
 /**
@@ -95,7 +94,7 @@ export const pollApi = {
   /**
    * Add option to poll using stored admin key
    */
-  async addOption(pollId: string, optionData: AddOptionRequest): Promise<Option> {
+  async addOption(pollId: string, optionData: AddOptionRequest): Promise<{ option_id: string }> {
     const adminKey = storage.getAdminKey(pollId)
     if (!adminKey) {
       throw new Error('Admin key not found for this poll')
@@ -106,12 +105,12 @@ export const pollApi = {
   /**
    * Publish poll using stored admin key
    */
-  async publishPoll(pollId: string): Promise<void> {
+  async publishPoll(pollId: string): Promise<{ share_slug: string; share_url: string }> {
     const adminKey = storage.getAdminKey(pollId)
     if (!adminKey) {
       throw new Error('Admin key not found for this poll')
     }
-    return apiClient.publishPoll(pollId, { admin_key: adminKey })
+    return apiClient.publishPoll(pollId, adminKey)
   },
 
   /**
@@ -122,7 +121,7 @@ export const pollApi = {
     if (!adminKey) {
       throw new Error('Admin key not found for this poll')
     }
-    return apiClient.closePoll(pollId, { admin_key: adminKey })
+    return apiClient.closePoll(pollId, adminKey)
   },
 
   /**
@@ -160,12 +159,12 @@ export const votingApi = {
   /**
    * Submit ballot using stored voter token
    */
-  async submitBallot(slug: string, ratings: Record<string, number>): Promise<void> {
+  async submitBallot(slug: string, scores: Record<string, number>): Promise<void> {
     const voterToken = storage.getVoterToken(slug)
     if (!voterToken) {
       throw new Error('Voter token not found. Please claim a username first.')
     }
-    return apiClient.submitBallot(slug, { voter_token: voterToken, ratings })
+    return apiClient.submitBallot(slug, { scores }, voterToken)
   },
 
   /**
