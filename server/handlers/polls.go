@@ -220,6 +220,79 @@ func (h *PollHandler) PublishPoll(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetPollAdmin handles GET /polls/:id/admin
+// Returns poll details for admin access using poll ID and admin key
+func (h *PollHandler) GetPollAdmin(w http.ResponseWriter, r *http.Request) {
+	pollID := r.PathValue("id")
+	if pollID == "" {
+		middleware.ErrorResponse(w, http.StatusBadRequest, "poll_id is required")
+		return
+	}
+
+	// Validate admin key
+	adminKey := r.Header.Get("X-Admin-Key")
+	if err := auth.ValidateAdminKey(pollID, adminKey, h.cfg.AdminKeySalt); err != nil {
+		middleware.ErrorResponse(w, http.StatusUnauthorized, "Invalid admin key")
+		return
+	}
+
+	// Get poll by ID
+	var poll models.Poll
+	err := h.db.QueryRow(`
+		SELECT id, title, description, creator_name, method, status, 
+		       share_slug, closes_at, closed_at, final_snapshot_id, created_at
+		FROM poll
+		WHERE id = $1
+	`, pollID).Scan(
+		&poll.ID, &poll.Title, &poll.Description, &poll.CreatorName,
+		&poll.Method, &poll.Status, &poll.ShareSlug, &poll.ClosesAt,
+		&poll.ClosedAt, &poll.FinalSnapshotID, &poll.CreatedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		middleware.ErrorResponse(w, http.StatusNotFound, "Poll not found")
+		return
+	}
+	if err != nil {
+		slog.Error("failed to query poll", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Get options
+	rows, err := h.db.Query(`
+		SELECT id, poll_id, label
+		FROM option
+		WHERE poll_id = $1
+		ORDER BY id
+	`, poll.ID)
+
+	if err != nil {
+		slog.Error("failed to query options", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+	defer rows.Close()
+
+	options := []models.Option{}
+	for rows.Next() {
+		var opt models.Option
+		if err := rows.Scan(&opt.ID, &opt.PollID, &opt.Label); err != nil {
+			slog.Error("failed to scan option", "error", err)
+			middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+			return
+		}
+		options = append(options, opt)
+	}
+
+	response := models.PollWithOptions{
+		Poll:    poll,
+		Options: options,
+	}
+
+	middleware.JSONResponse(w, http.StatusOK, response)
+}
+
 // ClosePoll handles POST /polls/:id/close
 func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 	pollID := r.PathValue("id")
@@ -253,10 +326,17 @@ func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Compute BMJ results (will implement in bmj package)
-	// For now, create a placeholder snapshot
+	// Compute BMJ results
 	snapshotID, _ := auth.GenerateID(16)
 	closedAt := time.Now()
+
+	// Compute BMJ rankings
+	rankings, err := h.computeBMJResults(pollID)
+	if err != nil {
+		slog.Error("failed to compute BMJ results", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Failed to compute results")
+		return
+	}
 
 	// Begin transaction
 	tx, err := h.db.Begin()

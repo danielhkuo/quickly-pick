@@ -28,6 +28,7 @@ func NewRouter(db *sql.DB, cfg cliparse.Config) *http.ServeMux {
 
 	// Poll management (admin operations)
 	mux.HandleFunc("POST /polls", middleware.WithLogging(pollHandler.CreatePoll))
+	mux.HandleFunc("GET /polls/{id}/admin", middleware.WithLogging(pollHandler.GetPollAdmin))
 	mux.HandleFunc("POST /polls/{id}/options", middleware.WithLogging(pollHandler.AddOption))
 	mux.HandleFunc("POST /polls/{id}/publish", middleware.WithLogging(pollHandler.PublishPoll))
 	mux.HandleFunc("POST /polls/{id}/close", middleware.WithLogging(pollHandler.ClosePoll))
