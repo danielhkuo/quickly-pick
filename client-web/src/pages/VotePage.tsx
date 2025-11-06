@@ -33,11 +33,10 @@ export const VotePage = () => {
   useEffect(() => {
     if (!slug) return
 
-    const loadPollData = async () => {
-      const result = await pollOperation.execute(async () => {
-        return await apiClient.getPoll(slug)
-      })
-
+    // Load poll data directly in useEffect to avoid dependency issues
+    pollOperation.execute(async () => {
+      return await apiClient.getPoll(slug)
+    }).then(result => {
       if (result) {
         // Initialize ratings with neutral values (0.5)
         const initialRatings: Record<string, number> = {}
@@ -60,10 +59,9 @@ export const VotePage = () => {
           }))
         }
       }
-    }
-
-    loadPollData()
-  }, [slug, pollOperation])
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]) // Only depend on slug - pollOperation is intentionally excluded to prevent infinite loops
 
   // Handle username claim
   const handleClaimUsername = async (e: React.FormEvent) => {

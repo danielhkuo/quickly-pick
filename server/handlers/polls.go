@@ -330,14 +330,6 @@ func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 	snapshotID, _ := auth.GenerateID(16)
 	closedAt := time.Now()
 
-	// Compute BMJ rankings
-	rankings, err := h.computeBMJResults(pollID)
-	if err != nil {
-		slog.Error("failed to compute BMJ results", "error", err)
-		middleware.ErrorResponse(w, http.StatusInternalServerError, "Failed to compute results")
-		return
-	}
-
 	// Begin transaction
 	tx, err := h.db.Begin()
 	if err != nil {

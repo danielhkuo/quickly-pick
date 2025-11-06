@@ -135,7 +135,10 @@ export const CreatePollPage = () => {
       }
 
       // Step 3: Publish the poll
-      await apiClient.publishPoll(createResponse.poll_id, createResponse.admin_key)
+      const publishResponse = await apiClient.publishPoll(createResponse.poll_id, createResponse.admin_key)
+      
+      // Ensure the poll is published before returning
+      console.log('Poll published successfully:', publishResponse)
 
       return createResponse
     })

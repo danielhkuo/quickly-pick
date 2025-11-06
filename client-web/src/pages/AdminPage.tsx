@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Container, Card, Button, LoadingSpinner, ErrorMessage, NetworkError } from '../components/common'
 import { useAsyncOperation } from '../hooks/useAsyncOperation'
@@ -13,9 +13,29 @@ export const AdminPage = () => {
   // Async operations
   const pollOperation = useAsyncOperation<GetPollResponse & { ballot_count: number }>()
   const closeOperation = useAsyncOperation<void>()
+
   
   const [adminKey, setAdminKey] = useState<string | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
+
+  const loadPollData = useCallback(async (pollId: string, adminKey: string) => {
+    await pollOperation.execute(async () => {
+      // First load poll data
+      const pollResponse = await apiClient.getPollAdmin(pollId, adminKey)
+      
+      // Then load ballot count using the poll slug (only if poll is published)
+      let ballotCount = 0
+      if (pollResponse.poll.share_slug) {
+        const ballotResponse = await apiClient.getBallotCount(pollResponse.poll.share_slug)
+        ballotCount = ballotResponse.ballot_count
+      }
+
+      return {
+        ...pollResponse,
+        ballot_count: ballotCount
+      }
+    })
+  }, [pollOperation])
 
   useEffect(() => {
     if (!pollId) {
@@ -31,23 +51,28 @@ export const AdminPage = () => {
     }
 
     setAdminKey(storedAdminKey)
-    loadPollData(pollId, storedAdminKey)
-  }, [pollId, pollOperation])
-
-  const loadPollData = async (pollId: string, adminKey: string) => {
-    await pollOperation.execute(async () => {
+    
+    // Load poll data directly in useEffect to avoid dependency issues
+    pollOperation.execute(async () => {
       // First load poll data
-      const pollResponse = await apiClient.getPollAdmin(pollId, adminKey)
+      const pollResponse = await apiClient.getPollAdmin(pollId, storedAdminKey)
       
-      // Then load ballot count using the poll slug
-      const ballotResponse = await apiClient.getBallotCount(pollResponse.poll.slug)
+      // Then load ballot count using the poll slug (only if poll is published)
+      let ballotCount = 0
+      if (pollResponse.poll.share_slug) {
+        const ballotResponse = await apiClient.getBallotCount(pollResponse.poll.share_slug)
+        ballotCount = ballotResponse.ballot_count
+      }
 
       return {
         ...pollResponse,
-        ballot_count: ballotResponse.ballot_count
+        ballot_count: ballotCount
       }
     })
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollId]) // Only depend on pollId - pollOperation is intentionally excluded to prevent infinite loops
+
+
 
   const handleClosePoll = async () => {
     if (!pollId || !adminKey || !pollOperation.state.data) return
@@ -63,9 +88,13 @@ export const AdminPage = () => {
   }
 
   const handleCopyLink = async () => {
-    if (!pollOperation.state.data?.poll.slug) return
+    if (!pollOperation.state.data?.poll.share_slug) {
+      // Show error feedback if no slug available
+      setCopySuccess(false)
+      return
+    }
 
-    const pollUrl = `${window.location.origin}/poll/${pollOperation.state.data.poll.slug}`
+    const pollUrl = `${window.location.origin}/poll/${pollOperation.state.data.poll.share_slug}`
     
     try {
       await navigator.clipboard.writeText(pollUrl)
@@ -85,8 +114,8 @@ export const AdminPage = () => {
   }
 
   const handleViewResults = () => {
-    if (pollOperation.state.data?.poll.slug) {
-      navigate(`/poll/${pollOperation.state.data.poll.slug}/results`)
+    if (pollOperation.state.data?.poll.share_slug) {
+      navigate(`/poll/${pollOperation.state.data.poll.share_slug}/results`)
     }
   }
 
@@ -198,16 +227,26 @@ export const AdminPage = () => {
 
         <Card>
           <h3>Share Poll</h3>
-          <p>Share this link with voters to allow them to participate:</p>
-          
-          <div className="share-link">
-            <code className="poll-url">
-              {window.location.origin}/poll/{poll.slug}
-            </code>
-            <Button onClick={handleCopyLink}>
-              {copySuccess ? 'Copied!' : 'Copy Link'}
-            </Button>
-          </div>
+          {poll.share_slug ? (
+            <>
+              <p>Share this link with voters to allow them to participate:</p>
+              <div className="share-link">
+                <code className="poll-url">
+                  {window.location.origin}/poll/{poll.share_slug}
+                </code>
+                <Button onClick={handleCopyLink}>
+                  {copySuccess ? 'Copied!' : 'Copy Link'}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="poll-notice">
+              <p>Poll is being prepared...</p>
+              <Button onClick={() => window.location.reload()}>
+                Refresh Page
+              </Button>
+            </div>
+          )}
         </Card>
 
         <Card>

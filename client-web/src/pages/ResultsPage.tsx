@@ -19,14 +19,12 @@ export const ResultsPage = () => {
   useEffect(() => {
     if (!slug) return
 
-    const loadResults = async () => {
-      await resultsOperation.execute(async () => {
-        return await apiClient.getResults(slug)
-      })
-    }
-
-    loadResults()
-  }, [slug, resultsOperation])
+    // Load results data directly in useEffect to avoid dependency issues
+    resultsOperation.execute(async () => {
+      return await apiClient.getResults(slug)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]) // Only depend on slug - resultsOperation is intentionally excluded to prevent infinite loops
 
   // Navigation handlers
   const handleBackToPoll = () => {
@@ -158,20 +156,20 @@ export const ResultsPage = () => {
             <div>
               {rankings.map((ranking) => (
                 <div 
-                  key={ranking.option.id} 
+                  key={ranking.option_id} 
                   style={{ 
                     marginBottom: '24px', 
                     padding: '20px', 
                     border: '2px solid',
-                    borderColor: ranking.is_vetoed ? '#d32f2f' : 'inherit',
-                    backgroundColor: ranking.is_vetoed ? '#ffebee' : 'rgba(0, 0, 0, 0.02)'
+                    borderColor: ranking.veto ? '#d32f2f' : 'inherit',
+                    backgroundColor: ranking.veto ? '#ffebee' : 'rgba(0, 0, 0, 0.02)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                     <h4 style={{ margin: 0, marginRight: '16px' }}>
-                      #{ranking.rank} {ranking.option.label}
+                      #{ranking.rank} {ranking.label}
                     </h4>
-                    {ranking.is_vetoed && (
+                    {ranking.veto && (
                       <span style={{ 
                         color: '#d32f2f', 
                         fontWeight: 'bold',
@@ -193,18 +191,18 @@ export const ResultsPage = () => {
                       <strong>Mean:</strong> {getRatingLabel(ranking.mean)} ({ranking.mean.toFixed(2)})
                     </div>
                     <div>
-                      <strong>10th percentile:</strong> {getRatingLabel(ranking.percentile_10)} ({ranking.percentile_10.toFixed(2)})
+                      <strong>10th percentile:</strong> {getRatingLabel(ranking.p10)} ({ranking.p10.toFixed(2)})
                     </div>
                     <div>
-                      <strong>90th percentile:</strong> {getRatingLabel(ranking.percentile_90)} ({ranking.percentile_90.toFixed(2)})
+                      <strong>90th percentile:</strong> {getRatingLabel(ranking.p90)} ({ranking.p90.toFixed(2)})
                     </div>
                   </div>
 
                   <div style={{ marginBottom: '8px' }}>
-                    <strong>Negative votes:</strong> {formatPercentage(ranking.negative_vote_percentage)}
+                    <strong>Negative votes:</strong> {formatPercentage(ranking.neg_share)}
                   </div>
 
-                  {ranking.is_vetoed && (
+                  {ranking.veto && (
                     <div style={{ 
                       marginTop: '12px', 
                       padding: '12px', 
@@ -213,7 +211,7 @@ export const ResultsPage = () => {
                       borderRadius: '4px'
                     }}>
                       <strong>Veto Explanation:</strong> This option received more than 33% negative votes 
-                      ({formatPercentage(ranking.negative_vote_percentage)}) and has been vetoed. 
+                      ({formatPercentage(ranking.neg_share)}) and has been vetoed. 
                       Vetoed options cannot win regardless of their median score.
                     </div>
                   )}

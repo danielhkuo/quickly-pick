@@ -5,7 +5,7 @@ export interface Poll {
   description: string
   creator_name: string
   status: 'draft' | 'open' | 'closed'
-  slug: string
+  share_slug?: string
   created_at: string
   closed_at?: string
 }
@@ -33,14 +33,15 @@ export interface ResultSnapshot {
 }
 
 export interface OptionRanking {
-  option: Option
+  option_id: string
+  label: string
   rank: number
   median: number
-  percentile_10: number
-  percentile_90: number
+  p10: number
+  p90: number
   mean: number
-  negative_vote_percentage: number
-  is_vetoed: boolean
+  neg_share: number
+  veto: boolean
 }
 
 // API Request Types

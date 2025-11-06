@@ -107,8 +107,8 @@ class ApiClient {
   /**
    * Publish a poll (make it available for voting)
    */
-  async publishPoll(pollId: string, adminKey: string): Promise<void> {
-    return this.post<void>(`/polls/${pollId}/publish`, {}, {
+  async publishPoll(pollId: string, adminKey: string): Promise<{ share_slug: string; share_url: string }> {
+    return this.post<{ share_slug: string; share_url: string }>(`/polls/${pollId}/publish`, {}, {
       'X-Admin-Key': adminKey
     })
   }
@@ -124,12 +124,9 @@ class ApiClient {
 
   /**
    * Get poll status and metadata (admin view)
-   * Note: Backend doesn't have /admin/polls endpoint, use regular getPoll
    */
   async getPollAdmin(pollId: string, adminKey: string): Promise<GetPollResponse> {
-    // Backend uses slug, not pollId - you may need to store the slug
-    // For now, treating pollId as slug
-    return this.get<GetPollResponse>(`/polls/${pollId}`, {
+    return this.get<GetPollResponse>(`/polls/${pollId}/admin`, {
       'X-Admin-Key': adminKey
     })
   }
