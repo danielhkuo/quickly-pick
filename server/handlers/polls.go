@@ -5,6 +5,7 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
@@ -327,6 +328,29 @@ func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Compute BMJ results
+	rankings, err := ComputeBMJRankings(h.db, pollID)
+	if err != nil {
+		slog.Error("failed to compute BMJ rankings", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Failed to compute results")
+		return
+	}
+
+	// Create payload JSON
+	payload := struct {
+		Rankings   []models.OptionStats `json:"rankings"`
+		InputsHash string               `json:"inputs_hash"`
+	}{
+		Rankings:   rankings,
+		InputsHash: computeInputsHash(h.db, pollID),
+	}
+
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		slog.Error("failed to marshal payload", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Failed to save results")
+		return
+	}
+
 	snapshotID, _ := auth.GenerateID(16)
 	closedAt := time.Now()
 
@@ -352,11 +376,11 @@ func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insert placeholder snapshot (will be replaced with actual BMJ computation)
+	// Insert snapshot with BMJ results
 	_, err = tx.Exec(`
 		INSERT INTO result_snapshot (id, poll_id, method, computed_at, payload)
 		VALUES ($1, $2, $3, $4, $5)
-	`, snapshotID, pollID, models.MethodBMJ, closedAt, `{"rankings":[],"inputs_hash":"placeholder"}`)
+	`, snapshotID, pollID, models.MethodBMJ, closedAt, payloadJSON)
 
 	if err != nil {
 		slog.Error("failed to insert snapshot", "error", err)
@@ -370,9 +394,9 @@ func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("poll closed", "poll_id", pollID, "snapshot_id", snapshotID)
+	slog.Info("poll closed", "poll_id", pollID, "snapshot_id", snapshotID, "option_count", len(rankings))
 
-	// Return response with placeholder snapshot
+	// Return response with computed rankings
 	middleware.JSONResponse(w, http.StatusOK, models.ClosePollResponse{
 		ClosedAt: closedAt,
 		Snapshot: models.ResultSnapshot{
@@ -380,8 +404,8 @@ func (h *PollHandler) ClosePoll(w http.ResponseWriter, r *http.Request) {
 			PollID:     pollID,
 			Method:     models.MethodBMJ,
 			ComputedAt: closedAt,
-			Rankings:   []models.OptionStats{},
-			InputsHash: "placeholder",
+			Rankings:   rankings,
+			InputsHash: payload.InputsHash,
 		},
 	})
 }
