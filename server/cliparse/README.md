@@ -1,311 +1,134 @@
-# CLI Parse Package
+# cliparse
 
-Command-line argument parsing and configuration management for the Quickly Pick server.
+Command-line and environment configuration parsing for the Quickly Pick server.
 
-## Overview
+This package provides a single entry point—`ParseFlags(args)`—that reads config from CLI flags with fallbacks to environment variables, applies a default port when unset, and enforces required settings for the database URL and salts.
 
-This package handles parsing command-line flags and environment variables to configure the server. It provides a clean interface for managing application configuration with sensible defaults and validation.
-
-## Configuration Structure
+## Configuration
 
 ```go
 type Config struct {
-    Port        int    // HTTP server port
-    DatabaseURL string // PostgreSQL connection string
-    AdminKeySalt string // Salt for generating admin keys
-    PollSlugSalt string // Salt for generating share slugs
+    Port         int
+    DatabaseURL  string
+    AdminKeySalt string
+    PollSlugSalt string
 }
-```
+````
 
-## Functions
+### Semantics
 
-### `ParseFlags(args []string) (*Config, error)`
+* **CLI flags win** over environment variables.
+* **Port**
 
-Parses command-line arguments and environment variables into a configuration struct.
+  * If `-p` is provided: use it.
+  * Else if `PORT` is set: parse it as an integer.
+  * Else: default to **3318**.
+* **DATABASE_URL** is **required** (via `-d` or `DATABASE_URL`).
+* **ADMIN_KEY_SALT** is **required** (via `-admin-salt` or `ADMIN_KEY_SALT`).
+* **POLL_SLUG_SALT** is **required** (via `-slug-salt` or `POLL_SLUG_SALT`).
+* This package validates presence of required values and that `PORT` (when read from env) is a valid integer. It does not enforce a port range (e.g., 1–65535).
 
-**Parameters:**
-- `args []string` - Command-line arguments (typically `os.Args[1:]`)
+## API
 
-**Returns:**
-- `*Config` - Parsed configuration
-- `error` - Parsing or validation error
+### `ParseFlags(args []string) (Config, error)`
 
-**Usage:**
-```go
-cfg, err := cliparse.ParseFlags(os.Args[1:])
-if err != nil {
-    log.Fatal("Configuration error:", err)
-}
+Parses flags and environment variables into a `Config`.
 
-fmt.Printf("Starting server on port %d\n", cfg.Port)
-```
+**Parameters**
 
-## Supported Flags
+* `args []string`: typically `os.Args[1:]`
 
-| Flag | Environment Variable | Default | Description |
-|------|---------------------|---------|-------------|
-| `--port` | `PORT` | `3318` | HTTP server port |
-| `--database-url` | `DATABASE_URL` | *required* | PostgreSQL connection string |
-| `--admin-key-salt` | `ADMIN_KEY_SALT` | `"default-admin-salt"` | Salt for admin key generation |
-| `--poll-slug-salt` | `POLL_SLUG_SALT` | `"default-slug-salt"` | Salt for share slug generation |
+**Returns**
 
-## Examples
+* `Config`: parsed configuration (returned by value)
+* `error`: flag parsing error or missing/invalid required settings
 
-### Command Line Usage
-
-```bash
-# Basic usage with required database URL
-./server --database-url "postgres://user:pass@localhost/quicklypick"
-
-# Custom port
-./server --port 3000 --database-url "postgres://..."
-
-# All options
-./server \
-  --port 3318 \
-  --database-url "postgres://user:pass@localhost/quicklypick" \
-  --admin-key-salt "my-secret-admin-salt" \
-  --poll-slug-salt "my-secret-slug-salt"
-```
-
-### Environment Variables
-
-```bash
-# Set environment variables
-export PORT=3318
-export DATABASE_URL="postgres://user:pass@localhost/quicklypick"
-export ADMIN_KEY_SALT="production-admin-salt"
-export POLL_SLUG_SALT="production-slug-salt"
-
-# Run server (will use environment variables)
-./server
-```
-
-### Mixed Usage
-
-Environment variables are used as defaults, command-line flags override them:
-
-```bash
-# DATABASE_URL from environment, port from command line
-export DATABASE_URL="postgres://user:pass@localhost/quicklypick"
-./server --port 3000
-```
-
-## Configuration Validation
-
-The parser validates configuration values:
-
-### Port Validation
-- Must be between 1 and 65535
-- Common ports (80, 443, 3318, 3000) are recommended
-
-### Database URL Validation
-- Must be a valid PostgreSQL connection string
-- Should include database name
-- SSL mode is recommended for production
-
-### Salt Validation
-- Salts should be non-empty strings
-- Production salts should be cryptographically random
-- Default salts are only for development
-
-## Integration Example
-
-```go
-package main
-
-import (
-    "log"
-    "os"
-    
-    "github.com/danielhkuo/quickly-pick/cliparse"
-)
-
-func main() {
-    // Parse configuration
-    cfg, err := cliparse.ParseFlags(os.Args[1:])
-    if err != nil {
-        log.Fatal("Configuration error:", err)
-    }
-    
-    // Validate production settings
-    if cfg.AdminKeySalt == "default-admin-salt" {
-        log.Warn("Using default admin key salt - not secure for production")
-    }
-    
-    // Use configuration
-    server := &http.Server{
-        Addr: fmt.Sprintf(":%d", cfg.Port),
-        Handler: createHandler(cfg),
-    }
-    
-    log.Printf("Starting server on port %d", cfg.Port)
-    log.Fatal(server.ListenAndServe())
-}
-```
-
-## Production Configuration
-
-### Security Considerations
-
-1. **Never use default salts in production**
-   ```bash
-   # Generate secure salts
-   export ADMIN_KEY_SALT=$(openssl rand -hex 32)
-   export POLL_SLUG_SALT=$(openssl rand -hex 32)
-   ```
-
-2. **Use secure database connections**
-   ```bash
-   export DATABASE_URL="postgres://user:pass@host:5432/db?sslmode=require"
-   ```
-
-3. **Restrict port access**
-   - Use reverse proxy (nginx, Caddy) for public access
-   - Bind application to localhost if behind proxy
-
-### Environment File (.env)
-
-For development, create a `.env` file:
-
-```env
-# Development configuration
-PORT=8080
-DATABASE_URL=postgres://user:password@localhost:5432/quicklypick_dev?sslmode=disable
-ADMIN_KEY_SALT=dev-admin-salt-not-for-production
-POLL_SLUG_SALT=dev-slug-salt-not-for-production
-```
-
-Load with:
-```go
-import "github.com/joho/godotenv"
-
-func main() {
-    // Load .env file (optional)
-    godotenv.Load()
-    
-    cfg, err := cliparse.ParseFlags(os.Args[1:])
-    // ...
-}
-```
-
-## Error Handling
-
-The parser returns specific errors for different validation failures:
-
-```go
-cfg, err := cliparse.ParseFlags(args)
-if err != nil {
-    switch {
-    case strings.Contains(err.Error(), "database-url"):
-        log.Fatal("Database configuration error:", err)
-    case strings.Contains(err.Error(), "port"):
-        log.Fatal("Port configuration error:", err)
-    default:
-        log.Fatal("Configuration error:", err)
-    }
-}
-```
-
-## Testing
-
-### Unit Tests
-
-```go
-func TestParseFlags(t *testing.T) {
-    tests := []struct {
-        name    string
-        args    []string
-        want    *Config
-        wantErr bool
-    }{
-        {
-            name: "valid config",
-            args: []string{
-                "--port", "8080",
-                "--database-url", "postgres://localhost/test",
-            },
-            want: &Config{
-                Port:        8080,
-                DatabaseURL: "postgres://localhost/test",
-                AdminKeySalt: "default-admin-salt",
-                PollSlugSalt: "default-slug-salt",
-            },
-            wantErr: false,
-        },
-        {
-            name: "missing database url",
-            args: []string{"--port", "8080"},
-            wantErr: true,
-        },
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            got, err := ParseFlags(tt.args)
-            if (err != nil) != tt.wantErr {
-                t.Errorf("ParseFlags() error = %v, wantErr %v", err, tt.wantErr)
-                return
-            }
-            if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
-                t.Errorf("ParseFlags() = %v, want %v", got, tt.want)
-            }
-        })
-    }
-}
-```
-
-### Integration Tests
-
-```bash
-# Test with environment variables
-export DATABASE_URL="postgres://localhost/test"
-go test -v ./cliparse
-
-# Test with command line args
-go test -v ./cliparse -args --port 3000 --database-url "postgres://localhost/test"
-```
-
-## Dependencies
-
-- `flag` - Standard library flag parsing
-- `os` - Environment variable access
-- `strconv` - String to integer conversion
-- `fmt` - Error formatting
-
-## Best Practices
-
-1. **Always validate configuration** before starting the server
-2. **Use environment variables** for sensitive values (passwords, salts)
-3. **Provide helpful error messages** for configuration issues
-4. **Document all configuration options** in deployment guides
-5. **Use different salts** for different environments (dev, staging, prod)
-
-## Troubleshooting
-
-### Common Issues
-
-**"database-url is required"**
-- Set `DATABASE_URL` environment variable or use `--database-url` flag
-
-**"invalid port"**
-- Port must be a number between 1-65535
-- Check for typos in port number
-
-**"connection refused"**
-- Database URL might be incorrect
-- Database server might not be running
-- Check firewall settings
-
-### Debug Configuration
-
-Add debug logging to see parsed configuration:
+**Example**
 
 ```go
 cfg, err := cliparse.ParseFlags(os.Args[1:])
 if err != nil {
     log.Fatal(err)
 }
-
-log.Printf("Configuration: Port=%d, DB=%s", cfg.Port, cfg.DatabaseURL)
+log.Printf("Listening on :%d", cfg.Port)
 ```
+
+## Supported flags and env vars
+
+| Setting        | Flag          | Env var          | Default      |
+| -------------- | ------------- | ---------------- | ------------ |
+| Port           | `-p`          | `PORT`           | `3318`       |
+| Database URL   | `-d`          | `DATABASE_URL`   | *(required)* |
+| Admin key salt | `-admin-salt` | `ADMIN_KEY_SALT` | *(required)* |
+| Poll slug salt | `-slug-salt`  | `POLL_SLUG_SALT` | *(required)* |
+
+> Note: These are the exact flag names defined in code. There are no `--port` / `--database-url` long aliases.
+
+## Usage examples
+
+### CLI-only
+
+```bash
+./server \
+  -p 3318 \
+  -d "postgres://user:pass@localhost:5432/quickly_pick_dev?sslmode=disable" \
+  -admin-salt "dev-admin-salt" \
+  -slug-salt "dev-slug-salt"
+```
+
+### Env-only
+
+```bash
+export PORT=3318
+export DATABASE_URL="postgres://user:pass@localhost:5432/quickly_pick_dev?sslmode=disable"
+export ADMIN_KEY_SALT="dev-admin-salt"
+export POLL_SLUG_SALT="dev-slug-salt"
+
+./server
+```
+
+### Mixed (flags override env)
+
+```bash
+export PORT=9000
+export DATABASE_URL="postgres://user:pass@localhost:5432/quickly_pick_dev?sslmode=disable"
+export ADMIN_KEY_SALT="dev-admin-salt"
+export POLL_SLUG_SALT="dev-slug-salt"
+
+# Overrides PORT from env
+./server -p 8080
+```
+
+## Common errors
+
+* `DATABASE_URL required`
+* `ADMIN_KEY_SALT required`
+* `POLL_SLUG_SALT required`
+* `invalid PORT env variable`
+
+## How this fits with `main.go`
+
+The server’s `main.go` loads a `.env` file (if present) and then calls:
+
+```go
+cfg, err := cliparse.ParseFlags(os.Args[1:])
+```
+
+So you can use either:
+
+* a `.env` file (loaded by `godotenv`), or
+* normal environment variables, or
+* CLI flags (highest priority).
+
+## Testing
+
+Run unit tests:
+
+```bash
+go test ./cliparse
+```
+
+The tests cover:
+
+* environment variable parsing (`PORT`, `DATABASE_URL`, salts)
+* CLI overriding environment variables
