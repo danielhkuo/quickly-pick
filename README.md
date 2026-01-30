@@ -19,7 +19,7 @@ go run main.go --port 3318 --database-url "postgres://user:password@localhost:54
 
 ```bash
 # In a new terminal, navigate to frontend
-cd client-web
+cd client/web-old
 
 # Install dependencies
 npm install
@@ -50,45 +50,45 @@ Create a poll, share a link, everyone votes with a slider per option. Results ar
 ## Documentation
 
 ### Getting Started
-- [Frontend Guide](docs/frontend.md) - React app setup and development
+- [Development Setup](docs/development.md) - Local setup and testing
 - [API Documentation](docs/api.md) - REST API endpoints and examples
-- [Development Setup](docs/development.md) - Backend development guide
 - [Deployment Guide](docs/deployment.md) - Production deployment instructions
 
 ### Technical Reference
 - [Database Schema](docs/database.md) - Data model and relationships
 - [Algorithm Guide](docs/algorithm.md) - How Balanced Majority Judgment works
-- [Server Documentation](server/README.md) - Backend service overview
 
 ### Package Documentation
-- [Authentication](server/auth/README.md) - Token generation and validation
-- [Configuration](server/cliparse/README.md) - CLI parsing and config management
-- [Database](server/db/README.md) - Schema creation and operations
-- [Handlers](server/handlers/README.md) - HTTP request handlers
-- [Middleware](server/middleware/README.md) - HTTP utilities and logging
-- [Models](server/models/README.md) - Data types and structures
-- [Router](server/router/README.md) - HTTP routing and endpoints
+
+Run `go doc` for any package:
+
+```bash
+go doc ./server/auth
+go doc ./server/handlers
+go doc ./server/models
+```
 
 ## Project Structure
 
 ```
-├── client-web/            # React frontend application
-│   ├── src/
-│   │   ├── api/          # API client and utilities
-│   │   ├── components/   # Reusable UI components
-│   │   ├── pages/        # Route components
-│   │   └── types/        # TypeScript definitions
-│   └── public/           # Static assets
-├── server/               # Go backend service
-│   ├── auth/            # Authentication utilities
-│   ├── cliparse/        # CLI argument parsing  
-│   ├── db/              # Database schema and operations
-│   ├── handlers/        # HTTP request handlers
-│   ├── middleware/      # HTTP middleware and utilities
-│   ├── models/          # Data types and structures
-│   ├── router/          # HTTP routing and endpoints
-│   └── main.go          # Application entry point
-└── docs/                # Documentation
+├── client/
+│   └── web-old/              # React frontend application
+│       ├── src/
+│       │   ├── api/          # API client and utilities
+│       │   ├── components/   # Reusable UI components
+│       │   ├── pages/        # Route components
+│       │   └── types/        # TypeScript definitions
+│       └── public/           # Static assets
+├── server/                   # Go backend service
+│   ├── auth/                # Authentication utilities
+│   ├── cliparse/            # CLI argument parsing
+│   ├── db/                  # Database schema and operations
+│   ├── handlers/            # HTTP request handlers
+│   ├── middleware/          # HTTP middleware and utilities
+│   ├── models/              # Data types and structures
+│   ├── router/              # HTTP routing and endpoints
+│   └── main.go              # Application entry point
+└── docs/                    # Documentation
 ```
 
 ## Technology Stack
@@ -115,8 +115,8 @@ Create a poll, share a link, everyone votes with a slider per option. Results ar
 cd server
 go run main.go
 
-# Terminal 2: Frontend  
-cd client-web
+# Terminal 2: Frontend
+cd client/web-old
 npm run dev
 ```
 
@@ -124,13 +124,20 @@ npm run dev
 
 ```bash
 # Build frontend
-cd client-web
+cd client/web-old
 npm run build
-# Output in client-web/dist/
+# Output in client/web-old/dist/
 
 # Build backend
 cd server
 go build -o quickly-pick main.go
+```
+
+### Running Tests
+
+```bash
+cd server
+go test ./...
 ```
 
 ## Contributing
