@@ -32,7 +32,6 @@ server/quickly-pick
 .DS_Store
 
 # Development notes
-MVP.md
-client-web/design-doc.md
-notes/
 .kiro
+.beads
+AGENTS.md
