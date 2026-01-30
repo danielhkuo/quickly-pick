@@ -75,7 +75,7 @@ func CORS(next http.Handler) http.Handler {
 
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Key, X-Voter-Token")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Admin-Key, X-Voter-Token, X-Device-UUID")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		// Handle preflight requests

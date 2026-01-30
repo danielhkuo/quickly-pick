@@ -8,6 +8,7 @@ const CreatePollPage = lazy(() => import('./pages/CreatePollPage').then(module =
 const AdminPage = lazy(() => import('./pages/AdminPage').then(module => ({ default: module.AdminPage })))
 const VotePage = lazy(() => import('./pages/VotePage').then(module => ({ default: module.VotePage })))
 const ResultsPage = lazy(() => import('./pages/ResultsPage').then(module => ({ default: module.ResultsPage })))
+const MyPollsPage = lazy(() => import('./pages/MyPollsPage').then(module => ({ default: module.MyPollsPage })))
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/admin/:pollId" element={<AdminPage />} />
             <Route path="/poll/:slug" element={<VotePage />} />
             <Route path="/poll/:slug/results" element={<ResultsPage />} />
+            <Route path="/my-polls" element={<MyPollsPage />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

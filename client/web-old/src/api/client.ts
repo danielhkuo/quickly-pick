@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './config'
 import { ApiError } from '../types'
+import { getDeviceUUID } from './device'
 import type {
   CreatePollRequest,
   CreatePollResponse,
@@ -8,7 +9,9 @@ import type {
   ClaimUsernameResponse,
   SubmitBallotRequest,
   GetPollResponse,
-  GetResultsResponse
+  GetResultsResponse,
+  DeviceInfo,
+  DevicePollSummary
 } from '../types'
 
 /**
@@ -33,6 +36,7 @@ class ApiClient {
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        'X-Device-UUID': getDeviceUUID(),
         ...options.headers,
       },
       ...options,
@@ -171,6 +175,29 @@ class ApiClient {
    */
   async getBallotCount(slug: string): Promise<{ ballot_count: number }> {
     return this.get<{ ballot_count: number }>(`/polls/${slug}/ballot-count`)
+  }
+
+  // Device Functions
+
+  /**
+   * Register this device with the backend
+   */
+  async registerDevice(): Promise<DeviceInfo> {
+    return this.post<DeviceInfo>('/devices/register')
+  }
+
+  /**
+   * Get device info for current device
+   */
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    return this.get<DeviceInfo>('/devices/me')
+  }
+
+  /**
+   * Get polls associated with this device
+   */
+  async getMyPolls(): Promise<DevicePollSummary[]> {
+    return this.get<DevicePollSummary[]>('/devices/my-polls')
   }
 }
 

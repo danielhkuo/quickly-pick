@@ -119,3 +119,22 @@ export interface ComponentState<T = unknown> {
   error: string | null
   data: T | null
 }
+
+// Device Types
+export interface DeviceInfo {
+  id: string
+  platform: 'ios' | 'macos' | 'android' | 'web'
+  created_at: string
+  last_seen_at: string
+}
+
+export interface DevicePollSummary {
+  poll_id: string
+  title: string
+  status: 'draft' | 'open' | 'closed'
+  share_slug?: string
+  role: 'voter' | 'admin'
+  username?: string
+  ballot_count: number
+  linked_at: string
+}
