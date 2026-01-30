@@ -93,4 +93,27 @@ CREATE TABLE IF NOT EXISTS result_snapshot (
 );
 
 CREATE INDEX IF NOT EXISTS idx_result_snapshot_poll_id ON result_snapshot(poll_id);
+
+-- Device registry (for iOS/macOS/Android apps)
+CREATE TABLE IF NOT EXISTS device (
+    id TEXT PRIMARY KEY,
+    device_uuid TEXT NOT NULL UNIQUE,
+    platform TEXT NOT NULL,  -- 'ios', 'macos', 'android', 'web'
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_uuid ON device(device_uuid);
+
+-- Link devices to poll participation
+CREATE TABLE IF NOT EXISTS device_poll (
+    device_id TEXT NOT NULL REFERENCES device(id) ON DELETE CASCADE,
+    poll_id TEXT NOT NULL REFERENCES poll(id) ON DELETE CASCADE,
+    voter_token TEXT,
+    role TEXT NOT NULL DEFAULT 'voter',  -- 'voter' or 'admin'
+    linked_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (device_id, poll_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_poll_device ON device_poll(device_id);
 `

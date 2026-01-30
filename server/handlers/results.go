@@ -245,3 +245,59 @@ func (h *ResultsHandler) GetBallotCount(w http.ResponseWriter, r *http.Request) 
 		"ballot_count": count,
 	})
 }
+
+// GetPreview handles GET /polls/:slug/preview
+// Returns compact poll data for iMessage bubble display
+func (h *ResultsHandler) GetPreview(w http.ResponseWriter, r *http.Request) {
+	shareSlug := r.PathValue("slug")
+	if shareSlug == "" {
+		middleware.ErrorResponse(w, http.StatusBadRequest, "slug is required")
+		return
+	}
+
+	// Get poll info with counts
+	var title, status string
+	var pollID string
+	err := h.db.QueryRow(`
+		SELECT id, title, status FROM poll WHERE share_slug = $1
+	`, shareSlug).Scan(&pollID, &title, &status)
+
+	if err == sql.ErrNoRows {
+		middleware.ErrorResponse(w, http.StatusNotFound, "Poll not found")
+		return
+	}
+	if err != nil {
+		slog.Error("failed to query poll", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Get option count
+	var optionCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM option WHERE poll_id = $1
+	`, pollID).Scan(&optionCount)
+	if err != nil {
+		slog.Error("failed to count options", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Get ballot count
+	var ballotCount int
+	err = h.db.QueryRow(`
+		SELECT COUNT(*) FROM ballot WHERE poll_id = $1
+	`, pollID).Scan(&ballotCount)
+	if err != nil {
+		slog.Error("failed to count ballots", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	middleware.JSONResponse(w, http.StatusOK, models.PollPreviewResponse{
+		Title:       title,
+		Status:      status,
+		OptionCount: optionCount,
+		BallotCount: ballotCount,
+	})
+}

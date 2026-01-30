@@ -133,6 +133,61 @@ type ResultSnapshot struct {
 	InputsHash string        `json:"inputs_hash"` // Hash of all ballot IDs for verification
 }
 
+// Device role constants
+const (
+	RoleVoter = "voter"
+	RoleAdmin = "admin"
+)
+
+// Platform constants
+const (
+	PlatformIOS     = "ios"
+	PlatformMacOS   = "macos"
+	PlatformAndroid = "android"
+	PlatformWeb     = "web"
+)
+
+// Device request/response types
+
+type RegisterDeviceRequest struct {
+	Platform string `json:"platform"`
+}
+
+type RegisterDeviceResponse struct {
+	DeviceID string `json:"device_id"`
+	IsNew    bool   `json:"is_new"`
+}
+
+type DeviceInfo struct {
+	ID         string    `json:"id"`
+	DeviceUUID string    `json:"-"` // Never expose in JSON
+	Platform   string    `json:"platform"`
+	CreatedAt  time.Time `json:"created_at"`
+	LastSeenAt time.Time `json:"last_seen_at"`
+}
+
+type DevicePollSummary struct {
+	PollID      string    `json:"poll_id"`
+	Title       string    `json:"title"`
+	Status      string    `json:"status"`
+	ShareSlug   *string   `json:"share_slug,omitempty"`
+	Role        string    `json:"role"`
+	Username    *string   `json:"username,omitempty"`
+	BallotCount int       `json:"ballot_count"`
+	LinkedAt    time.Time `json:"linked_at"`
+}
+
+type GetMyPollsResponse struct {
+	Polls []DevicePollSummary `json:"polls"`
+}
+
+type PollPreviewResponse struct {
+	Title       string `json:"title"`
+	Status      string `json:"status"`
+	OptionCount int    `json:"option_count"`
+	BallotCount int    `json:"ballot_count"`
+}
+
 // Error response
 
 type ErrorResponse struct {

@@ -19,6 +19,7 @@ func NewRouter(db *sql.DB, cfg cliparse.Config) *http.ServeMux {
 	pollHandler := handlers.NewPollHandler(db, cfg)
 	votingHandler := handlers.NewVotingHandler(db, cfg)
 	resultsHandler := handlers.NewResultsHandler(db, cfg)
+	deviceHandler := handlers.NewDeviceHandler(db, cfg)
 
 	// Health check
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +42,12 @@ func NewRouter(db *sql.DB, cfg cliparse.Config) *http.ServeMux {
 	mux.HandleFunc("GET /polls/{slug}", middleware.WithLogging(resultsHandler.GetPoll))
 	mux.HandleFunc("GET /polls/{slug}/results", middleware.WithLogging(resultsHandler.GetResults))
 	mux.HandleFunc("GET /polls/{slug}/ballot-count", middleware.WithLogging(resultsHandler.GetBallotCount))
+	mux.HandleFunc("GET /polls/{slug}/preview", middleware.WithLogging(resultsHandler.GetPreview))
+
+	// Device management
+	mux.HandleFunc("POST /devices/register", middleware.WithLogging(deviceHandler.Register))
+	mux.HandleFunc("GET /devices/me", middleware.WithLogging(deviceHandler.GetMe))
+	mux.HandleFunc("GET /devices/my-polls", middleware.WithLogging(deviceHandler.GetMyPolls))
 
 	// Root endpoint
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {

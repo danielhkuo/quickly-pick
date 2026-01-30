@@ -66,6 +66,17 @@ func (h *PollHandler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Link device to poll as admin (if X-Device-UUID header present)
+	deviceID, err := GetOrCreateDevice(h.db, r)
+	if err != nil {
+		slog.Warn("failed to get/create device", "error", err)
+		// Non-fatal: poll was created, just no device linking
+	} else if deviceID != "" {
+		if err := LinkDeviceToPoll(h.db, deviceID, pollID, models.RoleAdmin, nil); err != nil {
+			slog.Warn("failed to link device to poll", "error", err)
+		}
+	}
+
 	slog.Info("poll created", "poll_id", pollID, "creator", req.CreatorName)
 
 	// Return response
