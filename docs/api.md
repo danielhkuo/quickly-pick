@@ -357,6 +357,49 @@ curl -X POST http://localhost:3318/polls/k7Yz3mNx/ballots \
 
 ---
 
+#### GET /polls/{slug}/my-ballot
+
+Get the current user's existing ballot for a poll.
+
+**Headers:**
+- `X-Voter-Token` (required)
+
+**Response:** `200 OK`
+
+If the user has voted:
+```json
+{
+  "scores": {
+    "opt1": 0.9,
+    "opt2": 0.3,
+    "opt3": 0.5
+  },
+  "submitted_at": "2025-01-15T14:30:00Z",
+  "has_voted": true
+}
+```
+
+If the user has not voted:
+```json
+{
+  "scores": {},
+  "submitted_at": null,
+  "has_voted": false
+}
+```
+
+**Errors:**
+- `401 Unauthorized` - Missing or invalid voter token
+- `404 Not Found` - Poll not found
+
+**Example:**
+```bash
+curl http://localhost:3318/polls/k7Yz3mNx/my-ballot \
+  -H "X-Voter-Token: K7Yz3mNxPqRsTuVwXyZ123AbCdEfGhIj"
+```
+
+---
+
 ### Results (Public)
 
 #### GET /polls/{slug}
