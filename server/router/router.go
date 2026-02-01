@@ -37,6 +37,7 @@ func NewRouter(db *sql.DB, cfg cliparse.Config) *http.ServeMux {
 	// Voting operations (public)
 	mux.HandleFunc("POST /polls/{slug}/claim-username", middleware.WithLogging(votingHandler.ClaimUsername))
 	mux.HandleFunc("POST /polls/{slug}/ballots", middleware.WithLogging(votingHandler.SubmitBallot))
+	mux.HandleFunc("GET /polls/{slug}/my-ballot", middleware.WithLogging(votingHandler.GetMyBallot))
 
 	// Results retrieval (public, with sealed results)
 	mux.HandleFunc("GET /polls/{slug}", middleware.WithLogging(resultsHandler.GetPoll))

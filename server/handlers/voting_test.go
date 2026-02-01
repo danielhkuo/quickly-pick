@@ -552,6 +552,158 @@ func TestUpdateBallot(t *testing.T) {
 	}
 }
 
+func TestGetMyBallot(t *testing.T) {
+	db := setupTestDB(t)
+	defer db.Close()
+
+	cfg := getTestConfig()
+	handler := NewVotingHandler(db, cfg)
+
+	// Create an open poll with options
+	pollID, _ := auth.GenerateID(16)
+	shareSlug := auth.GenerateShareSlug(pollID, cfg.PollSlugSalt)
+	_, err := db.Exec(`
+		INSERT INTO poll (id, title, creator_name, status, share_slug, created_at)
+		VALUES ($1, 'Test Poll', 'Alice', 'open', $2, $3)
+	`, pollID, shareSlug, time.Now())
+	if err != nil {
+		t.Fatalf("Failed to create test poll: %v", err)
+	}
+
+	// Add options
+	optionID1, _ := auth.GenerateID(12)
+	optionID2, _ := auth.GenerateID(12)
+	for _, opt := range []struct {
+		id    string
+		label string
+	}{
+		{optionID1, "Option A"},
+		{optionID2, "Option B"},
+	} {
+		_, err := db.Exec(`
+			INSERT INTO option (id, poll_id, label)
+			VALUES ($1, $2, $3)
+		`, opt.id, pollID, opt.label)
+		if err != nil {
+			t.Fatalf("Failed to create option: %v", err)
+		}
+	}
+
+	// Claim a username
+	voterToken, _ := auth.GenerateVoterToken()
+	_, err = db.Exec(`
+		INSERT INTO username_claim (poll_id, username, voter_token, created_at)
+		VALUES ($1, 'voter1', $2, $3)
+	`, pollID, voterToken, time.Now())
+	if err != nil {
+		t.Fatalf("Failed to create username claim: %v", err)
+	}
+
+	// Test 1: No ballot exists yet
+	t.Run("no ballot exists", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/polls/"+shareSlug+"/my-ballot", nil)
+		req.SetPathValue("slug", shareSlug)
+		req.Header.Set("X-Voter-Token", voterToken)
+		w := httptest.NewRecorder()
+
+		handler.GetMyBallot(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp models.GetMyBallotResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		if resp.HasVoted {
+			t.Error("Expected HasVoted to be false")
+		}
+		if len(resp.Scores) != 0 {
+			t.Errorf("Expected empty scores, got %d", len(resp.Scores))
+		}
+	})
+
+	// Submit a ballot
+	ballotID, _ := auth.GenerateID(16)
+	submittedAt := time.Now()
+	_, err = db.Exec(`
+		INSERT INTO ballot (id, poll_id, voter_token, submitted_at)
+		VALUES ($1, $2, $3, $4)
+	`, ballotID, pollID, voterToken, submittedAt)
+	if err != nil {
+		t.Fatalf("Failed to create ballot: %v", err)
+	}
+
+	_, err = db.Exec(`
+		INSERT INTO score (ballot_id, option_id, value01)
+		VALUES ($1, $2, 0.8), ($1, $3, 0.3)
+	`, ballotID, optionID1, optionID2)
+	if err != nil {
+		t.Fatalf("Failed to create scores: %v", err)
+	}
+
+	// Test 2: Ballot exists
+	t.Run("ballot exists", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/polls/"+shareSlug+"/my-ballot", nil)
+		req.SetPathValue("slug", shareSlug)
+		req.Header.Set("X-Voter-Token", voterToken)
+		w := httptest.NewRecorder()
+
+		handler.GetMyBallot(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp models.GetMyBallotResponse
+		if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+			t.Fatalf("Failed to decode response: %v", err)
+		}
+
+		if !resp.HasVoted {
+			t.Error("Expected HasVoted to be true")
+		}
+		if len(resp.Scores) != 2 {
+			t.Errorf("Expected 2 scores, got %d", len(resp.Scores))
+		}
+		if resp.Scores[optionID1] != 0.8 {
+			t.Errorf("Expected score 0.8 for option1, got %f", resp.Scores[optionID1])
+		}
+		if resp.Scores[optionID2] != 0.3 {
+			t.Errorf("Expected score 0.3 for option2, got %f", resp.Scores[optionID2])
+		}
+	})
+
+	// Test 3: Missing voter token
+	t.Run("missing voter token", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/polls/"+shareSlug+"/my-ballot", nil)
+		req.SetPathValue("slug", shareSlug)
+		w := httptest.NewRecorder()
+
+		handler.GetMyBallot(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		}
+	})
+
+	// Test 4: Poll not found
+	t.Run("poll not found", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/polls/nonexistent/my-ballot", nil)
+		req.SetPathValue("slug", "nonexistent")
+		req.Header.Set("X-Voter-Token", voterToken)
+		w := httptest.NewRecorder()
+
+		handler.GetMyBallot(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d", http.StatusNotFound, w.Code)
+		}
+	})
+}
+
 func TestSubmitBallotToClosedPoll(t *testing.T) {
 	db := setupTestDB(t)
 	defer db.Close()

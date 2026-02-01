@@ -188,6 +188,12 @@ type PollPreviewResponse struct {
 	BallotCount int    `json:"ballot_count"`
 }
 
+type GetMyBallotResponse struct {
+	Scores      map[string]float64 `json:"scores"`
+	SubmittedAt time.Time          `json:"submitted_at"`
+	HasVoted    bool               `json:"has_voted"`
+}
+
 // Error response
 
 type ErrorResponse struct {

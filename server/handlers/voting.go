@@ -117,6 +117,89 @@ func (h *VotingHandler) ClaimUsername(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetMyBallot handles GET /polls/:slug/my-ballot
+func (h *VotingHandler) GetMyBallot(w http.ResponseWriter, r *http.Request) {
+	shareSlug := r.PathValue("slug")
+	if shareSlug == "" {
+		middleware.ErrorResponse(w, http.StatusBadRequest, "slug is required")
+		return
+	}
+
+	// Get voter token from header
+	voterToken := r.Header.Get("X-Voter-Token")
+	if voterToken == "" {
+		middleware.ErrorResponse(w, http.StatusUnauthorized, "X-Voter-Token header required")
+		return
+	}
+
+	// Find poll by share slug
+	var pollID string
+	err := h.db.QueryRow(`
+		SELECT id FROM poll WHERE share_slug = $1
+	`, shareSlug).Scan(&pollID)
+
+	if err == sql.ErrNoRows {
+		middleware.ErrorResponse(w, http.StatusNotFound, "Poll not found")
+		return
+	}
+	if err != nil {
+		slog.Error("failed to query poll", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Find ballot for this voter
+	var ballotID string
+	var submittedAt time.Time
+	err = h.db.QueryRow(`
+		SELECT id, submitted_at FROM ballot
+		WHERE poll_id = $1 AND voter_token = $2
+	`, pollID, voterToken).Scan(&ballotID, &submittedAt)
+
+	if err == sql.ErrNoRows {
+		// No ballot found - return empty response
+		middleware.JSONResponse(w, http.StatusOK, models.GetMyBallotResponse{
+			Scores:   make(map[string]float64),
+			HasVoted: false,
+		})
+		return
+	}
+	if err != nil {
+		slog.Error("failed to query ballot", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	// Get scores for this ballot
+	rows, err := h.db.Query(`
+		SELECT option_id, value01 FROM score WHERE ballot_id = $1
+	`, ballotID)
+	if err != nil {
+		slog.Error("failed to query scores", "error", err)
+		middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+	defer rows.Close()
+
+	scores := make(map[string]float64)
+	for rows.Next() {
+		var optionID string
+		var value float64
+		if err := rows.Scan(&optionID, &value); err != nil {
+			slog.Error("failed to scan score", "error", err)
+			middleware.ErrorResponse(w, http.StatusInternalServerError, "Database error")
+			return
+		}
+		scores[optionID] = value
+	}
+
+	middleware.JSONResponse(w, http.StatusOK, models.GetMyBallotResponse{
+		Scores:      scores,
+		SubmittedAt: submittedAt,
+		HasVoted:    true,
+	})
+}
+
 // SubmitBallot handles POST /polls/:slug/ballots
 func (h *VotingHandler) SubmitBallot(w http.ResponseWriter, r *http.Request) {
 	shareSlug := r.PathValue("slug")
