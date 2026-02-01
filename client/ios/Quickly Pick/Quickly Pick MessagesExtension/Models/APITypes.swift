@@ -125,6 +125,18 @@ struct GetMyPollsResponse: Decodable {
     let polls: [DevicePollSummary]
 }
 
+struct GetMyBallotResponse: Decodable {
+    let scores: [String: Double]
+    let submittedAt: Date?
+    let hasVoted: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case scores
+        case submittedAt = "submitted_at"
+        case hasVoted = "has_voted"
+    }
+}
+
 // MARK: - Error Response
 
 struct APIErrorResponse: Decodable {

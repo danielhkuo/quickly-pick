@@ -26,11 +26,20 @@ struct RootView: View {
         case .createPoll:
             CreatePollView(viewModel: viewModel)
 
+        case .myPolls:
+            MyPollsView(viewModel: viewModel)
+
+        case .pollAdmin(let pollId):
+            PollAdminView(viewModel: viewModel, pollId: pollId)
+
         case .claimUsername(let slug, let title):
             ClaimUsernameView(viewModel: viewModel, slug: slug, title: title)
 
-        case .vote(let slug, let title):
-            VoteView(viewModel: viewModel, slug: slug, title: title)
+        case .viewingBallot(let slug, let title):
+            ViewingBallotView(viewModel: viewModel, slug: slug, title: title)
+
+        case .vote(let slug, let title, let isEditing):
+            VoteView(viewModel: viewModel, slug: slug, title: title, isEditing: isEditing)
 
         case .voteSubmitted(let slug, let title):
             VoteSubmittedView(viewModel: viewModel, slug: slug, title: title)

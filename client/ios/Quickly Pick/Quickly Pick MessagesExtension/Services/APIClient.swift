@@ -85,6 +85,11 @@ final class APIClient {
         return try await post("/polls/\(slug)/ballots", body: request, headers: ["X-Voter-Token": voterToken])
     }
 
+    /// Get user's existing ballot
+    func getMyBallot(slug: String, voterToken: String) async throws -> GetMyBallotResponse {
+        return try await get("/polls/\(slug)/my-ballot", headers: ["X-Voter-Token": voterToken])
+    }
+
     // MARK: - Results
 
     /// Get poll results

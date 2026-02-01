@@ -7,6 +7,7 @@ struct VoteView: View {
     @ObservedObject var viewModel: RootViewModel
     let slug: String
     let title: String
+    let isEditing: Bool
 
     var body: some View {
         NavigationStack {
@@ -22,7 +23,7 @@ struct VoteView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Vote")
+            .navigationTitle(isEditing ? "Edit Vote" : "Vote")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -40,9 +41,15 @@ struct VoteView: View {
                 .font(.title3.bold())
                 .multilineTextAlignment(.center)
 
-            Text("Drag each slider to express how you feel")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            if isEditing {
+                Text("Adjust the sliders to change your vote")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Drag each slider to express how you feel")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
         }
     }
 
@@ -67,7 +74,7 @@ struct VoteView: View {
 
     private var submitButton: some View {
         Button(action: { viewModel.submitBallot(slug: slug, title: title) }) {
-            Label("Submit Vote", systemImage: "checkmark.circle.fill")
+            Label(isEditing ? "Update Vote" : "Submit Vote", systemImage: "checkmark.circle.fill")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
@@ -76,7 +83,7 @@ struct VoteView: View {
     }
 }
 
-#Preview {
+#Preview("New Vote") {
     let viewModel = RootViewModel()
     viewModel.currentPoll = PollWithOptions(
         poll: Poll(
@@ -100,5 +107,32 @@ struct VoteView: View {
     )
     viewModel.scores = ["opt1": 0.5, "opt2": 0.5, "opt3": 0.5]
 
-    return VoteView(viewModel: viewModel, slug: "abc123", title: "Where to eat?")
+    return VoteView(viewModel: viewModel, slug: "abc123", title: "Where to eat?", isEditing: false)
+}
+
+#Preview("Edit Vote") {
+    let viewModel = RootViewModel()
+    viewModel.currentPoll = PollWithOptions(
+        poll: Poll(
+            id: "1",
+            title: "Where to eat?",
+            description: "",
+            creatorName: "Test",
+            method: "bmj",
+            status: .open,
+            shareSlug: "abc123",
+            closesAt: nil,
+            closedAt: nil,
+            finalSnapshotId: nil,
+            createdAt: Date()
+        ),
+        options: [
+            Option(id: "opt1", pollId: "1", label: "Pizza"),
+            Option(id: "opt2", pollId: "1", label: "Tacos"),
+            Option(id: "opt3", pollId: "1", label: "Sushi")
+        ]
+    )
+    viewModel.scores = ["opt1": 0.8, "opt2": 0.3, "opt3": 0.6]
+
+    return VoteView(viewModel: viewModel, slug: "abc123", title: "Where to eat?", isEditing: true)
 }
