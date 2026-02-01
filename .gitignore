@@ -34,4 +34,7 @@ server/quickly-pick
 # Development notes
 .kiro
 .beads
+.claude
+.gitattributes
 AGENTS.md
+CLAUDE.md
